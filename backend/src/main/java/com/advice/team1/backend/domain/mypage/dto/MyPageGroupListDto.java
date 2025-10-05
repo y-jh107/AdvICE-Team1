@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class MyPageGroupListDto {
-    String groupId;
+    Long groupId;
     String name;
 }
