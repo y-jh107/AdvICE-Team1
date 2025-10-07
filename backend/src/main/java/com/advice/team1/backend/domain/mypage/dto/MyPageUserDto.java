@@ -9,5 +9,5 @@ public class MyPageUserDto {
     private Long userId;
     private String name;
     private String email;
-    private String password;
+    private String phone;
 }
