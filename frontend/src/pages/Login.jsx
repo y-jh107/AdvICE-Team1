@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
-import loginImage from "../assets/login-image.png"; // 이미지 경로 ✅
+import loginImage from "../assets/login-image.png";
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -11,6 +11,12 @@ const PageWrapper = styled.div`
   justify-content: center;
   min-height: 100vh;
   background-color: #fff;
+  padding: 1rem;
+
+  @media (max-width: 900px) {
+    flex-direction: column-reverse;
+    justify-content: flex-start;
+  }
 `;
 
 // 왼쪽 이미지 영역
@@ -24,6 +30,14 @@ const ImageSection = styled.div`
     width: 70%;
     max-width: 500px;
   }
+
+  @media (max-width: 900px) {
+    margin-bottom: 2rem;
+    img {
+      width: 50%;
+      max-width: 300px;
+    }
+  }
 `;
 
 // 오른쪽 로그인 폼 영역
@@ -32,6 +46,11 @@ const FormSection = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+
+  @media (max-width: 900px) {
+    width: 90%;
+  }
 `;
 
 // 폼 자체 스타일
@@ -41,13 +60,10 @@ const FormWrapper = styled.form`
   gap: 1rem;
   width: 80%;
   max-width: 320px;
-`;
 
-// “아이디(이메일)” “비밀번호” 같은 라벨
-const Label = styled.label`
-  font-weight: 800;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+  @media (max-width: 900px) {
+    width: 100%;
+  }
 `;
 
 // 회원가입 링크
