@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
-import loginImage from "../assets/login-image.png";
+import loginImage from "../assets/login-image.png"; // 이미지 경로 ✅
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -21,8 +21,8 @@ const ImageSection = styled.div`
   align-items: center;
 
   img {
-    width: 80%;
-    max-width: 400px;
+    width: 70%;
+    max-width: 500px;
   }
 `;
 
@@ -46,7 +46,7 @@ const FormWrapper = styled.form`
 // “아이디(이메일)” “비밀번호” 같은 라벨
 const Label = styled.label`
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin-bottom: 0.25rem;
 `;
 
@@ -79,12 +79,10 @@ export default function Login() {
 
   return (
     <PageWrapper>
-      {/* 왼쪽 이미지 */}
       <ImageSection>
         <img src={loginImage} alt="Login illustration" />
       </ImageSection>
 
-      {/* 오른쪽 로그인 폼 */}
       <FormSection>
         <FormWrapper onSubmit={handleSubmit}>
           <InputField
@@ -94,7 +92,6 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-
           <InputField
             label="비밀번호"
             type="password"
@@ -102,9 +99,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-
           <Button text="로그인" type="submit" />
-
           <SignupText>
             계정이 없으신가요? <a href="/signup">회원가입</a>
           </SignupText>

@@ -3,10 +3,8 @@ import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
   @font-face {
-    font-family: 'D2Coding';
-    src: 
-url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_three@1.0/D2Coding.woff') 
-format('woff');
+    font-family: 'IsYun';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff') format('woff');
     font-weight: normal;
     font-display: swap;
   }
@@ -18,9 +16,9 @@ format('woff');
   }
 
   body {
-    font-family: 'D2Coding', monospace;
+    font-family: 'IsYun', monospace;
     background-color: #fff;
-    color: #333;
+    color: #000000ff;
   }
 
   button, input {
@@ -29,4 +27,3 @@ format('woff');
 `;
 
 export default GlobalStyle;
-

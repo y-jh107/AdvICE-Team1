@@ -9,16 +9,16 @@ const Wrapper = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
-  color: #333;
+  color: #000000ff;
 `;
 
 const StyledInput = styled.input`
   padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid #ccc;
-  font-size: 1rem;
+  font-size: 0.9rem;
   width: 100%;
   box-sizing: border-box;
 
