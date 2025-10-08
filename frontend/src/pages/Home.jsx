@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import mainLogo from '../assets/mainPage_Logo.png';
 
-
 //임시
 const TempButton = styled(Link)`
   display: inline-block;
