@@ -27,14 +27,14 @@ const ImageSection = styled.div`
   align-items: center;
 
   img {
-    width: 70%;
+    width: 80%;
     max-width: 500px;
   }
 
   @media (max-width: 900px) {
-    margin-bottom: 2rem;
+    margin-bottom: 5rem;
     img {
-      width: 50%;
+      width: 80%;
       max-width: 300px;
     }
   }
