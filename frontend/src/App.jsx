@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
 import Home from "./pages/Home";
 import Trips from "./pages/Trips";
 import Login from "./pages/Login";
@@ -12,16 +11,15 @@ import ExpenseForm from "./pages/ExpenseForm";
 import GroupForm from "./pages/GroupForm";
 import GroupCreate from "./pages/GroupCreate";
 import Calendar from "./pages/Calendar";
+import Footer from "./components/Footer";
 
 import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
 
 function App() {
-  
-
   return (
     <BrowserRouter>
-     
+      <GlobalStyle />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
