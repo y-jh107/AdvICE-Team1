@@ -28,6 +28,8 @@ const StyledButton = styled.button`
           border: 1px solid #d1d5db;
           &:hover {
             background-color: #f3f4f6;
+            outline: none;
+            box-shadow: none;
           }
         `}
 
