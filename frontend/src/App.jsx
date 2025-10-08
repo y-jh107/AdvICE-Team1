@@ -14,7 +14,7 @@ import GroupCreate from "./pages/GroupCreate";
 import Calendar from "./pages/Calendar";
 
 import "./App.css";
-import GlobalStyle from "./styles/GlobalStyle";
+import GlobalStyle from "./styles/GlobalStyle"; 
 
 function App() {
   
@@ -35,7 +35,6 @@ function App() {
         <Route path="/trips" element={<Trips />} />
       </Routes>
 
-      <Footer />
     </BrowserRouter>
   );
 }
