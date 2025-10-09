@@ -4,7 +4,6 @@ import com.advice.team1.backend.domain.group.entity.GroupMember;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
