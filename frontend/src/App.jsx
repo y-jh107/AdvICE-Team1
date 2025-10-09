@@ -1,8 +1,6 @@
-import { useState } from "react";
+import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import Footer from "./components/Footer";
+
 
 import Home from "./pages/Home";
 import Trips from "./pages/Trips";
@@ -19,7 +17,7 @@ import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
 
 function App() {
-  const [count, setCount] = useState(0);
+  
 
   return (
     <BrowserRouter>
@@ -57,7 +55,6 @@ function App() {
         <Route path="/trips" element={<Trips />} />
       </Routes>
 
-      <Footer />
     </BrowserRouter>
   );
 }
