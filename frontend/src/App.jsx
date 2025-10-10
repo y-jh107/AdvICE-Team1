@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
 import Home from "./pages/Home";
 import Trips from "./pages/Trips";
 import Login from "./pages/Login";
@@ -18,8 +17,6 @@ import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
 
 function App() {
-  
-
   return (
     <BrowserRouter>
       <div>
