@@ -1,18 +1,37 @@
 // src/components/Button.jsx
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { Link } from "react-router-dom";
 
 const StyledButton = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
+  padding: 0.75rem 2rem;
+  font-weight: bold;
+  border-radius: 0.5rem;
   font-size: 1rem;
   cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  text-decoration: none;
+  border: none;
 
-  &:hover {
-    background-color: #0056b3;
-  }
+  ${({ variant }) =>
+    variant === "primary"
+      ? css`
+          background-color: #3b82f6;
+          color: white;
+          &:hover {
+            background-color: #2563eb;
+          }
+        `
+      : css`
+          background-color: white;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          &:hover {
+            background-color: #f3f4f6;
+            outline: none;
+            box-shadow: none;
+          }
+        `}
 
   &:disabled {
     background-color: #ccc;
@@ -20,12 +39,29 @@ const StyledButton = styled.button`
   }
 `;
 
-export default function Button({ text, onClick, type = 
-"button", disabled = false }) {
-  return (
-    <StyledButton type={type} onClick={onClick} 
-disabled={disabled}>
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  display: inline-block;
+`;
+
+export default function Button({
+  text,
+  to,
+  onClick,
+  type = "button",
+  disabled = false,
+  variant = "primary", // 기본값: 파란색 버튼
+}) {
+  const button = (
+    <StyledButton
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      variant={variant}
+    >
       {text}
     </StyledButton>
   );
+
+  return to ? <StyledLink to={to}>{button}</StyledLink> : button;
 }
