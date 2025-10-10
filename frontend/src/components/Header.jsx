@@ -1,15 +1,14 @@
 // src/components/Header.jsx
 
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import Button from '../components/Button'; 
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import Button from "./Button"; // Button 컴포넌트 경로 확인
 
-// 1. 로고 이미지를 import 합니다.
-import logoImage from '../assets/Logo.png'; // 로고 이미지 파일 경로를 확인하세요.
+// 로고 이미지
+import logoImage from "../assets/Logo.png";
 
 // --- Styled Components ---
-
 const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
@@ -20,12 +19,11 @@ const HeaderContainer = styled.header`
   padding: 1rem 2%;
   background-color: white;
   border-bottom: 1.9rem solid #3b82f6;
-  //box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
 `;
 
 const Logo = styled.img`
-  height: 40px; /* 로고 이미지의 세로 크기를 조절하세요. */
+  height: 40px;
   cursor: pointer;
 `;
 
@@ -44,18 +42,17 @@ const StyledLink = styled(Link)`
   }
 `;
 
-
-
 // --- Header Component ---
-function Header({ userName }) {
+function Header({ userName = "Guest" }) {
+  // 기본값 추가
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleMyPageClick = () => {
-    if (location.pathname === '/mypage') {
+    if (location.pathname === "/mypage") {
       window.location.reload();
     } else {
-      navigate('/mypage');
+      navigate("/mypage");
     }
   };
 
@@ -64,10 +61,10 @@ function Header({ userName }) {
       <Link to="/">
         <Logo src={logoImage} alt="YeoBi Logo" />
       </Link>
-      
+
       <NavLinks>
         <StyledLink to="/trips">내 여행</StyledLink>
-        <StyledLink to="/">로그아웃</StyledLink> 
+        <StyledLink to="/">로그아웃</StyledLink>
         <Button onClick={handleMyPageClick} variant="primary" text={userName} />
       </NavLinks>
     </HeaderContainer>

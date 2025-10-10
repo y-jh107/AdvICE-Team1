@@ -13,7 +13,6 @@ const dummyUser = {
   email: "12345@gmail.com",
   phone: "010-1111-1111",
 };
-ㅊㅇ;
 
 const dummyExpenses = [
   { date: "9월 15일", amount: "30,000원" },
@@ -33,7 +32,7 @@ const dummyTrips = [
 // --- Styled Components ---
 
 const PageWrapper = styled.div`
-  background-color: #white;
+  background-color: #ffffff;
   min-height: 100vh; // 화면 전체 높이 사용
   display: flex;
   flex-direction: column; // 자식 요소들을 세로로 정렬
@@ -152,7 +151,6 @@ function Mypage() {
 
   return (
     <PageWrapper>
-      <Header userName={userDisplayName} /> {/* Header 컴포넌트 사용 */}
       <MainContent>
         <PageTitle>마이페이지</PageTitle>
         <ContentGrid>
