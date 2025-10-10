@@ -1,4 +1,4 @@
-package com.advice.team1.backend.interfaces.dto;
+package com.advice.team1.backend.common.interfaces.dto;
 
 import jakarta.validation.constraints.*;
 

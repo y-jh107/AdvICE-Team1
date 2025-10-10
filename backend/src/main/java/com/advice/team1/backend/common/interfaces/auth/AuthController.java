@@ -1,9 +1,9 @@
-package com.advice.team1.backend.interfaces.auth;
+package com.advice.team1.backend.common.interfaces.auth;
 
-import com.advice.team1.backend.application.AuthService;
+import com.advice.team1.backend.common.application.AuthService;
 import com.advice.team1.backend.common.response.ApiResponse;
-import com.advice.team1.backend.interfaces.dto.SignInRequest;
-import com.advice.team1.backend.interfaces.dto.SignUpRequest;
+import com.advice.team1.backend.common.interfaces.dto.SignInRequest;
+import com.advice.team1.backend.common.interfaces.dto.SignUpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;

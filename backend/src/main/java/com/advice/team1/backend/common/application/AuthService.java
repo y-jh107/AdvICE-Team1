@@ -1,16 +1,15 @@
-package com.advice.team1.backend.application;
+package com.advice.team1.backend.common.application;
 
-import com.advice.team1.backend.domain.user.UserRepository;
+import com.advice.team1.backend.domain.user.repository.UserRepository;
 import com.advice.team1.backend.domain.user.entity.User;
-import com.advice.team1.backend.interfaces.dto.SignInRequest;  // 실제 DTO 경로에 맞춰주세요
-import com.advice.team1.backend.interfaces.dto.SignUpRequest; // (interfaces.auth.dto 라면 그 경로로 변경)
+import com.advice.team1.backend.common.interfaces.dto.SignInRequest;  // 실제 DTO 경로에 맞춰주세요
+import com.advice.team1.backend.common.interfaces.dto.SignUpRequest; // (interfaces.auth.dto 라면 그 경로로 변경)
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package com.advice.team1.backend.application;
+package com.advice.team1.backend.common.application;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
