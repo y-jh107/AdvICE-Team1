@@ -1,32 +1,33 @@
 // src/pages/Mypage.jsx
 
-import React from 'react';
-import styled from 'styled-components';
-import { Link } from 'react-router-dom';
-import Button from '../components/Button'; // 공용 버튼 컴포넌트
-import Header from '../components/Header'; // 공용 Header 컴포넌트
-import calendarIcon from '../assets/calendar-icon.png'; // 캘린더 아이콘 이미지 경로 (준비 필요)
+import React from "react";
+import styled from "styled-components";
+import { Link } from "react-router-dom";
+import Button from "../components/Button"; // 공용 버튼 컴포넌트
+import Header from "../components/Header"; // 공용 Header 컴포넌트
+import calendarIcon from "../assets/calendar-icon.png"; // 캘린더 아이콘 이미지 경로 (준비 필요)
 
 // --- Mock Data (나중에 실제 데이터로 교체) ---
 const dummyUser = {
-  name: '어드바이스',
-  email: '12345@gmail.com',
-  phone: '010-1111-1111',
+  name: "어드바이스",
+  email: "12345@gmail.com",
+  phone: "010-1111-1111",
 };
+ㅊㅇ;
 
 const dummyExpenses = [
-  { date: '9월 15일', amount: '30,000원' },
-  { date: '9월 16일', amount: '80,000원' },
-  { date: '9월 17일', amount: '100,000원' },
-  { date: '9월 18일', amount: '50,000원' },
-  { date: '9월 19일', amount: '40,000원' },
+  { date: "9월 15일", amount: "30,000원" },
+  { date: "9월 16일", amount: "80,000원" },
+  { date: "9월 17일", amount: "100,000원" },
+  { date: "9월 18일", amount: "50,000원" },
+  { date: "9월 19일", amount: "40,000원" },
 ];
 
 const dummyTrips = [
-  { name: '태국 여행' },
-  { name: '중일 친구들이랑 일본 여행' },
-  { name: '3박 4일 싱가포르 여행' },
-  { name: '중국 여행' },
+  { name: "태국 여행" },
+  { name: "중일 친구들이랑 일본 여행" },
+  { name: "3박 4일 싱가포르 여행" },
+  { name: "중국 여행" },
 ];
 
 // --- Styled Components ---
@@ -39,8 +40,7 @@ const PageWrapper = styled.div`
 `;
 
 const MainContent = styled.main`
- 
-  width:90rem;
+  width: 90rem;
   max-width: 80rem; /* 최대 너비를 1200px 정도로 설정하는 것이 일반적 */
   margin: 0 auto; /* 중앙 정렬 */
   padding: 3rem 0rem; /* 콘텐츠 영역 전체의 상하, 좌우 여백 */
@@ -51,8 +51,7 @@ const PageTitle = styled.h1`
   font-size: 2.5rem;
   margin-bottom: 2rem;
   text-align: left; // 제목 좌측 정렬
-  padding-left: 5%; // 좌측 패딩 추가 
-
+  padding-left: 5%; // 좌측 패딩 추가
 `;
 
 const ContentGrid = styled.div`
@@ -61,7 +60,6 @@ const ContentGrid = styled.div`
   gap: 2rem;
   margin-bottom: 2rem;
   padding: 0 2rem; // 그리드 내부 좌우 패딩
-
 `;
 
 const DashboardGrid = styled.div`
@@ -69,7 +67,6 @@ const DashboardGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   padding: 0 2rem; // 그리드 내부 좌우 패딩
-
 `;
 
 const Card = styled.div`
@@ -143,7 +140,8 @@ const ListCard = styled(Card)`
       border-bottom: none;
     }
   }
-  ${Button} { // ListCard 내의 Button 스타일 조정
+  ${Button} {
+    // ListCard 내의 Button 스타일 조정
     width: 100%; // 버튼 너비를 카드에 맞게 100%
   }
 `;
@@ -155,7 +153,6 @@ function Mypage() {
   return (
     <PageWrapper>
       <Header userName={userDisplayName} /> {/* Header 컴포넌트 사용 */}
-
       <MainContent>
         <PageTitle>마이페이지</PageTitle>
         <ContentGrid>
@@ -183,13 +180,15 @@ function Mypage() {
             <p>캘린더로 이동하기</p>
           </CalendarLink>
         </ContentGrid>
-        
+
         <DashboardGrid>
           <ListCard>
             <h3>일일 내 지출액</h3>
             <ul>
               {dummyExpenses.map((item, index) => (
-                <li key={index}>{item.date}: {item.amount}</li>
+                <li key={index}>
+                  {item.date}: {item.amount}
+                </li>
               ))}
             </ul>
             <Button to="/expenses" variant="primary" text={"더보기"} />
