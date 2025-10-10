@@ -12,6 +12,7 @@ import ExpenseForm from "./pages/ExpenseForm";
 import GroupForm from "./pages/GroupForm";
 import GroupCreate from "./pages/GroupCreate";
 import Calendar from "./pages/Calendar";
+import Footer from "./components/Footer";
 
 import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
@@ -55,6 +56,7 @@ function App() {
         <Route path="/trips" element={<Trips />} />
       </Routes>
 
+      <Footer />
     </BrowserRouter>
   );
 }
