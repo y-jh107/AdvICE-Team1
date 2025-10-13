@@ -3,6 +3,7 @@ import React from "react";
 import styled from "styled-components";
 import mainLogo from "../assets/mainPage_Logo.png";
 import Button from "../components/Button";
+import { Link } from "react-router-dom";
 
 const HomeContainer = styled.div`
   display: flex;
@@ -59,8 +60,15 @@ function Home() {
     <HomeContainer>
       <LogoImage src={mainLogo} alt="YeoBi Main Logo" />
       <ButtonContainer>
-        <Button text="시작하기" to="/Trips" variant="primary" />
-        <Button text="회원가입" to="/Signup" variant="secondary" />
+        {/* 시작하기 버튼 */}
+        <Link to="/Trips">
+          <Button text="시작하기" variant="primary" />
+        </Link>
+
+        {/* 회원가입 버튼 */}
+        <Link to="/signup">
+          <Button text="회원가입" variant="secondary" />
+        </Link>
       </ButtonContainer>
     </HomeContainer>
   );
