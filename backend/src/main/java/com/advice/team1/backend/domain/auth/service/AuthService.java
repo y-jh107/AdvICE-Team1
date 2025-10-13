@@ -1,9 +1,10 @@
-package com.advice.team1.backend.common.application;
+package com.advice.team1.backend.domain.auth.service;
 
-import com.advice.team1.backend.domain.user.repository.UserRepository;
+import com.advice.team1.backend.common.application.JwtService;
+import com.advice.team1.backend.domain.mypage.repository.UserRepository;
 import com.advice.team1.backend.domain.user.entity.User;
-import com.advice.team1.backend.common.interfaces.dto.SignInRequest;  // 실제 DTO 경로에 맞춰주세요
-import com.advice.team1.backend.common.interfaces.dto.SignUpRequest; // (interfaces.auth.dto 라면 그 경로로 변경)
+import com.advice.team1.backend.domain.auth.dto.SignInDto;  // 실제 DTO 경로에 맞춰주세요
+import com.advice.team1.backend.domain.auth.dto.SignUpDto; // (interfaces.auth.dto 라면 그 경로로 변경)
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ public class AuthService {
      * 비밀번호 저장/검증은 난중에 Security 모듈 연동 시 처리
      */
     @Transactional
-    public void signUp(SignUpRequest req) {
+    public void signUp(SignUpDto req) {
         if (users.existsByEmail(req.email())) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
@@ -32,7 +33,6 @@ public class AuthService {
         User u = User.builder()
                 .name(req.name())
                 .email(req.email())
-                .phone(req.phone()) // DTO에 phone 없으면 제거
                 .build();
 
         users.save(u);
@@ -45,7 +45,7 @@ public class AuthService {
      * 현재는 이메일 존재 여부만 확인 후 더미 토큰 발급
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> signIn(SignInRequest req) {
+    public Map<String, Object> signIn(SignInDto req) {
         User u = users.findByEmail(req.email())
                 .orElseThrow(() -> new IllegalArgumentException("로그인 정보가 일치하지 않습니다."));
 
