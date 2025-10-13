@@ -3,6 +3,7 @@ import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
+import { API_BASE_URL } from "../config";
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -88,9 +89,34 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ email, password });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/sign-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "로그인 실패");
+        return;
+      }
+
+      alert("로그인 성공!");
+      // 예시: 토큰 로컬스토리지 저장
+      localStorage.setItem("accessToken", data.data.accessToken);
+      localStorage.setItem("refreshToken", data.data.refreshToken);
+
+      // 로그인 후 마이페이지 이동
+      window.location.href = "/Trips";
+    } catch (err) {
+      console.error(err);
+      alert("서버와 연결할 수 없습니다.");
+    }
   };
 
   return (
