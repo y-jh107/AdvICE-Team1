@@ -1,4 +1,4 @@
-package com.advice.team1.backend.interfaces.auth;
+package com.advice.team1.backend.common;
 
 import com.advice.team1.backend.common.response.ApiResponse;
 import org.springframework.http.*;
