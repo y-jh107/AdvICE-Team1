@@ -61,7 +61,7 @@ function Home() {
       <LogoImage src={mainLogo} alt="YeoBi Main Logo" />
       <ButtonContainer>
         {/* 시작하기 버튼 */}
-        <Link to="/Trips">
+        <Link to="/Login">
           <Button text="시작하기" variant="primary" />
         </Link>
 
