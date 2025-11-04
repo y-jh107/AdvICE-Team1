@@ -1,6 +1,7 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+// src/App.jsx
 
+import React from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Trips from "./pages/Trips";
@@ -12,36 +13,22 @@ import ExpenseForm from "./pages/ExpenseForm";
 import GroupForm from "./pages/GroupForm";
 import GroupCreate from "./pages/GroupCreate";
 import Calendar from "./pages/Calendar";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
 
 import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
 
-function App() {
-  
+// --- Header 조건부 렌더링을 위해 Wrapper 컴포넌트 생성 ---
+function AppWrapper() {
+  const location = useLocation();
+  const noHeaderPaths = ["/", "/login", "/signup"]; // Header 안 보일 경로
 
   return (
-    <BrowserRouter>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <GlobalStyle />
+    <>
+      {/* 현재 경로가 noHeaderPaths에 없으면 Header 표시 */}
+      {!noHeaderPaths.includes(location.pathname) && <Header />}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -55,6 +42,17 @@ function App() {
         <Route path="/trips" element={<Trips />} />
       </Routes>
 
+      <Footer />
+    </>
+  );
+}
+
+// --- App 컴포넌트 ---
+function App() {
+  return (
+    <BrowserRouter>
+      <GlobalStyle />
+      <AppWrapper />
     </BrowserRouter>
   );
 }

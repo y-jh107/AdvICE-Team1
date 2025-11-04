@@ -1,17 +1,17 @@
 package com.advice.team1.backend.service;
 
 import com.advice.team1.backend.domain.dto.*;
-import com.advice.team1.backend.repository.ExpenseRepository;
-import com.advice.team1.backend.repository.GroupRepository;
-import com.advice.team1.backend.repository.UserRepository;
+import com.advice.team1.backend.domain.entity.GroupMember;
 import com.advice.team1.backend.domain.entity.User;
+import com.advice.team1.backend.repository.ExpenseRepository;
+import com.advice.team1.backend.repository.GroupMemberRepository;
+import com.advice.team1.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.time.Instant;
 import java.time.*;
 import java.util.List;
 
@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MyPageService {
     private final ExpenseRepository expenseRepository;
-    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
 
     /**
@@ -42,7 +42,7 @@ public class MyPageService {
         User user = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        List<MyPageGroupListDto> groups = groupRepository.findByUserId(user.getId());
+        List<GroupMember> groups = groupMemberRepository.findByUser_Id(user.getId());
 
         Range range = normalizeRange(from, to);
 
