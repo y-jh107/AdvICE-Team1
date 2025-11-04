@@ -1,38 +1,9 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import mainLogo from '../assets/mainPage_Logo.png';
-
-
-//임시
-const TempButton = styled(Link)`
-  display: inline-block;
-  font-weight: bold;
-  padding: 0.75rem 2rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  text-decoration: none;
-  transition: all 0.3s ease;
-  text-align: center;
-`;
-
-const PrimaryButton = styled(TempButton)`
-  background-color: #3b82f6;
-  color: white;
-  &:hover {
-    background-color: #2563eb;
-  }
-`;
-
-const SecondaryButton = styled(TempButton)`
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  &:hover {
-    background-color: #f3f4f6;
-  }
-`;
-//임시 끝
+// src/pages/Home.jsx
+import React from "react";
+import styled from "styled-components";
+import mainLogo from "../assets/mainPage_Logo.png";
+import Button from "../components/Button";
+import { Link } from "react-router-dom";
 
 const HomeContainer = styled.div`
   display: flex;
@@ -41,35 +12,66 @@ const HomeContainer = styled.div`
   justify-content: center;
   min-height: 100vh;
   background-color: white;
+  padding: 1rem;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
 `;
 
-// ▼▼▼ 2. 로고 이미지를 표시할 간단한 img 태그로 변경합니다. ▼▼▼
 const LogoImage = styled.img`
-  max-width: 48rem; /* 이미지 크기 조절 */
-  height: 42rem; /* 이미지 크기 조절 */
-  object-fit: contain; /* 이미지 비율 유지 */
-  margin-top: -12rem;
+  max-width: 40rem;
+  height: auto;
+  object-fit: contain;
+  margin-top: -8rem;
+
+  @media (max-width: 1024px) {
+    max-width: 30rem;
+    margin-top: -6rem;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 20rem;
+    margin-top: -2rem;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 14rem;
+    margin-top: 0;
+  }
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
-  gap: 3rem;
-  margin-top: 2 rem; 
+  gap: 2rem;
+  margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
 `;
 
-// --- Home 컴포넌트 ---
 function Home() {
   return (
     <HomeContainer>
-      {/* ▼▼▼ 3. 단일 로고 이미지만 렌더링합니다. ▼▼▼ */}
       <LogoImage src={mainLogo} alt="YeoBi Main Logo" />
-      
       <ButtonContainer>
-        <PrimaryButton to="/Login">시작하기</PrimaryButton>
-        <SecondaryButton to="/Signup">회원가입</SecondaryButton>
+        {/* 시작하기 버튼 */}
+        <Link to="/Trips">
+          <Button text="시작하기" variant="primary" />
+        </Link>
+
+        {/* 회원가입 버튼 */}
+        <Link to="/signup">
+          <Button text="회원가입" variant="secondary" />
+        </Link>
       </ButtonContainer>
     </HomeContainer>
   );
-} 
+}
 
 export default Home;

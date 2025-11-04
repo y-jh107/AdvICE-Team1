@@ -3,6 +3,7 @@ import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import signupImage from "../assets/signup-image.png";
+import { API_BASE_URL } from "../config";
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -90,14 +91,38 @@ export default function Signup() {
   const [agree2, setAgree2] = useState(false);
   const [agree3, setAgree3] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!agree1 || !agree2 || !agree3) {
       alert("모든 개인정보 수집 동의에 체크해주세요.");
       return;
     }
-    console.log({ name, email, password, agree1, agree2, agree3 });
-    // 이후 백엔드 API 연동 가능
+
+    if (password.length < 8) {
+      alert("비밀번호는 8자 이상이어야 합니다.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/sign-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "회원가입 실패");
+        return;
+      }
+
+      alert("회원가입 성공");
+      window.location.href = "/login";
+    } catch (err) {
+      console.error(err);
+      alert("서버와 연결할 수 없습니다.");
+    }
   };
 
   return (
@@ -121,7 +146,7 @@ export default function Signup() {
           <InputField
             label="비밀번호"
             type="password"
-            placeholder="비밀번호를 입력하세요"
+            placeholder="비밀번호를 입력하세요(최소 8자 이상)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
