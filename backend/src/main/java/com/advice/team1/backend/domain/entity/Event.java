@@ -1,31 +1,26 @@
 package com.advice.team1.backend.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "expenses")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class Expense {
+public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private BigDecimal amount;
-    private String payment;
-    private String memo;
+    private Date date;
     private String location;
-
-    private Date spentAt;
-    private String currency;
-    private String splitMode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
