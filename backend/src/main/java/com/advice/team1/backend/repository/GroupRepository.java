@@ -1,5 +1,7 @@
 package com.advice.team1.backend.repository;
 
+import com.advice.team1.backend.domain.dto.GroupDto;
+import com.advice.team1.backend.domain.entity.Group;
 import com.advice.team1.backend.domain.entity.GroupMember;
 import com.advice.team1.backend.domain.dto.MyPageGroupListDto;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +12,7 @@ import java.util.List;
 
 public interface GroupRepository extends JpaRepository<GroupMember, Long> {
     @Query("""
-        select new com.advice.team1.backend.domain.mypage.dto.MyPageGroupListDto(
+        select new com.advice.team1.backend.domain.dto.MyPageGroupListDto(
             g.id, g.name
         )
         from GroupMember gm
@@ -20,4 +22,6 @@ public interface GroupRepository extends JpaRepository<GroupMember, Long> {
         """
     )
     List<MyPageGroupListDto> findByUserId(@Param("userId") long userId);
+
+    List<Group> findByMembers_UserId(Long userId);
 }
