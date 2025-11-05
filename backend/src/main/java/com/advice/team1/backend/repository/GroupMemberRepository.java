@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface GroupRepository extends JpaRepository<GroupMember, Long> {
+public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
     @Query("""
         select new com.advice.team1.backend.domain.mypage.dto.MyPageGroupListDto(
             g.id, g.name

@@ -2,7 +2,7 @@ package com.advice.team1.backend.service;
 
 import com.advice.team1.backend.domain.dto.*;
 import com.advice.team1.backend.repository.ExpenseRepository;
-import com.advice.team1.backend.repository.GroupRepository;
+import com.advice.team1.backend.repository.GroupMemberRepository;
 import com.advice.team1.backend.repository.UserRepository;
 import com.advice.team1.backend.domain.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MyPageService {
     private final ExpenseRepository expenseRepository;
-    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupRepository;
     private final UserRepository userRepository;
 
     /**

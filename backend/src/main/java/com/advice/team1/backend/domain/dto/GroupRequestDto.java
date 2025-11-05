@@ -1,4 +1,12 @@
 package com.advice.team1.backend.domain.dto;
 
-public class GroupRequestDto {
-}
+import java.time.LocalDate;
+import java.util.List;
+
+public record GroupRequestDto(
+        String name,
+        List<GroupMemberRequestDto> members,
+        LocalDate startDate,
+        LocalDate endDate,
+        String description
+) {}

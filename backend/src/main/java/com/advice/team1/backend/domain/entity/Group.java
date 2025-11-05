@@ -19,6 +19,10 @@ public class Group {
 
     private String name;
 
+    public void changeName(String name) {
+        this.name = name;
+    }
+
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMember> groupMembers = new ArrayList<>();
 }

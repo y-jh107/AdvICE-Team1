@@ -1,4 +1,6 @@
 package com.advice.team1.backend.domain.dto;
 
-public class GroupMemberRequestDto {
-}
+public record GroupMemberRequestDto (
+        String email,
+        String role
+) {}
