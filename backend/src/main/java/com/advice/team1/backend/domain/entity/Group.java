@@ -19,6 +19,9 @@ public class Group {
 
     private String name;
 
+    @Column(name = "group_image")
+    private String groupImage;
+
     public void changeName(String name) {
         this.name = name;
     }

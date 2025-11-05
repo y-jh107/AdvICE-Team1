@@ -5,6 +5,7 @@ import java.util.List;
 
 public record GroupRequestDto(
         String name,
+        String groupImage,
         List<GroupMemberRequestDto> members,
         LocalDate startDate,
         LocalDate endDate,
