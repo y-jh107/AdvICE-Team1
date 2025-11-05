@@ -3,6 +3,7 @@ package com.advice.team1.backend.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,9 @@ public class Group {
     private Long id;
 
     private String name;
+    private String memo;
+    private Date startDate;
+    private Date endDate;
 
     @Column(name = "group_image")
     private String groupImage;

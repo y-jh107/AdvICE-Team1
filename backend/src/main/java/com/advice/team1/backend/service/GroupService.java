@@ -69,4 +69,11 @@ public class GroupService {
 
         return g;
     }
+
+    public List<GroupDto> getGroupsByUserId(Long userId) {
+        return groupMemberRepository.findByUser_Id(userId)
+                .stream()
+                .map(gm -> new GroupDto(gm.getGroup()))
+                .collect(Collectors.toList());
+    }
 }
