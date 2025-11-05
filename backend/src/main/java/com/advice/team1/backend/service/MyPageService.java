@@ -19,6 +19,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class MyPageService {
+  
     private final ExpenseRepository expenseRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;

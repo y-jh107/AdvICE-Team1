@@ -23,6 +23,13 @@ public class Group {
     private Date startDate;
     private Date endDate;
 
+    @Column(name = "group_image")
+    private String groupImage;
+
+    public void changeName(String name) {
+        this.name = name;
+    }
+
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMember> groupMembers = new ArrayList<>();
 }
