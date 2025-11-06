@@ -1,15 +1,19 @@
 package com.advice.team1.backend.service;
 
+import com.advice.team1.backend.domain.dto.GroupDto;
 import com.advice.team1.backend.domain.dto.GroupMemberRequestDto;
 import com.advice.team1.backend.domain.dto.GroupRequestDto;
 import com.advice.team1.backend.domain.entity.Group;
 import com.advice.team1.backend.domain.entity.GroupMember;
-import com.advice.team1.backend.repository.GroupRepository;
 import com.advice.team1.backend.repository.GroupMemberRepository;
+import com.advice.team1.backend.repository.GroupRepository;
 import com.advice.team1.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,10 +74,20 @@ public class GroupService {
         return g;
     }
 
+    @Transactional(readOnly = true)
     public List<GroupDto> getGroupsByUserId(Long userId) {
-        return groupMemberRepository.findByUser_Id(userId)
+        return groupMembers.findByUser_Id(userId)
                 .stream()
-                .map(gm -> new GroupDto(gm.getGroup()))
+                .map(gm -> {
+                    Group g = gm.getGroup();
+                    return new GroupDto(
+                            g.getId(),
+                            g.getName(),
+                            null,
+                            null,
+                            null
+                    );
+                })
                 .collect(Collectors.toList());
     }
 }
