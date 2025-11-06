@@ -20,4 +20,7 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
         """
     )
     List<MyPageGroupListDto> findByUserId(@Param("userId") long userId);
+
+    List<GroupMember> findByUser_Id(Long userId);
+
 }
