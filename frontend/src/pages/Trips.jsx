@@ -3,12 +3,14 @@ import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
+// 1. react-router-dom에서 Link를 임포트합니다.
+import { Link } from 'react-router-dom';
 
-// --- CSS 리셋 ---
+// --- CSS 리셋 (파일 내에 정의) ---
 const GlobalPageReset = createGlobalStyle`
   body {
     margin: 0; 
-    background-color: #white; 
+    background-color: white; 
   }
   main {
     display: block; 
@@ -16,39 +18,113 @@ const GlobalPageReset = createGlobalStyle`
   }
 `;
 
-//  pageStyles
+// --- 1. 모달(껍데기) 스타일 컴포넌트 정의 ---
+const Backdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; 
+`;
+
+const ModalContainer = styled.div`
+  width: 90%;
+  max-width: 600px; 
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+`;
+
+const CloseButtonWrapper = styled.div`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+`;
+
+// --- 2. 모달(알맹이) 스타일 컴포넌트 정의 ---
+const DetailWrapper = styled.div`
+  padding: 1rem;
+  margin-top: 1rem; 
+`;
+
+// 2. Title 스타일에 링크 관련 스타일 추가
+const Title = styled.h2`
+  margin-top: 0;
+  margin-bottom: 2rem;
+  text-align: center;
+  
+  font-size: 1.8rem;
+  font-weight: 700;
+
+  /* Link로 작동할 때의 스타일 */
+  text-decoration: none;
+  color: inherit; /* 기본 h2 색상 사용 */
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #3b82f6; /* 호버 시 파란색 (Button 컴포넌트와 유사) */
+  }
+`;
+
+const MemberTable = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Row = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 2fr 1.5fr; 
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+
+  &:first-child {
+    background-color: #f4f6f8;
+    font-weight: bold;
+  }
+`;
+
+const Cell = styled.div`
+  font-size: 0.95rem;
+  &:last-child {
+    text-align: right;
+  }
+`;
+
+// --- 3. Trips 페이지 스타일 컴포넌트 정의 ---
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 `;
-
-//  mainStyles
 const Main = styled.main`
   flex: 1;
   width: 100%;
   max-width: 1200px;
   padding: 60px 20px;
-  background-color: #white;
-  margin: 8rem auto 0 auto; /* 헤더 겹침 방지 */
+  background-color: white;
+  margin: 8rem auto 0 auto; 
 `;
-
-// topBarStyles
 const TopBar = styled.div`
   display: flex;
   justify-content: flex-end;
   margin-bottom: 20px;
 `;
-
-// listStyles
 const CardList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
   justify-content: center;
 `;
-
-// cardStyles
 const Card = styled.div`
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -58,13 +134,18 @@ const Card = styled.div`
   background-color: #ffffff;
   width: 300px;
   margin: 0 auto;
+  
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
 `;
-
-//  imagePlaceholderStyles
 const ImagePlaceholder = styled.div`
   width: 100%;
   height: 180px;
-  background-color: #f0f0f0;
+  background-color: #f0f0e0;
   border-radius: 4px;
   display: flex;
   justify-content: center;
@@ -72,14 +153,10 @@ const ImagePlaceholder = styled.div`
   color: #aaa;
   margin-bottom: 16px;
 `;
-
-// moreButtonContainerStyles
 const MoreButtonContainer = styled.div`
   text-align: center;
   margin-top: 40px;
 `;
-
-//  infoMessageStyles
 const InfoMessage = styled.p`
   text-align: center;
   color: #dc3545;
@@ -89,23 +166,146 @@ const InfoMessage = styled.p`
 // --- 스타일 정의 끝 ---
 
 
-// 목업 데이터 (테스트용 6개)
+// --- 4. 목업 데이터 정의 (모든 항목에 동일한 팀원 적용) ---
 const mockTravelData = [
-  { id: 1, title: '태국 여행', description: '모임 설명 1' },
-  { id: 2, title: '중딩 친구들과 일본여행', description: '모임 설명 2' },
-  { id: 3, title: '3박 4일 싱가포르 여행', description: '모임 설명 3' },
-  { id: 4, title: '제주도 2박 3일', description: '모임 설명 4' },
-  { id: 5, title: '부산 맛집 투어', description: '모임 설명 5' },
-  { id: 6, title: '강릉 당일치기', description: '모임 설명 6' },
+  { 
+    id: 1, 
+    title: '태국 여행', 
+    description: '모임 설명 1',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 2, 
+    title: '중딩 친구들과 일본여행', 
+    description: '모임 설명 2',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 3, 
+    title: '3박 4일 싱가포르', 
+    description: '모임 설명 3',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 4, 
+    title: '제주도 2박 3일', 
+    description: '모임 설명 4',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 5, 
+    title: '부산 맛집 투어', 
+    description: '모임 설명 5',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 6, 
+    title: '강릉 당일치기', 
+    description: '모임 설명 6',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
 ];
 
 const ITEMS_PER_LOAD = 3;
 
+// --- 5. 모달 컴포넌트들 정의 (파일 내) ---
+
+/** (알맹이) 상세 정보 테이블 컴포넌트 */
+function TripDetailModal({ trip, onClose }) {
+  
+  if (!trip) {
+    return null;
+  }
+  const details = trip;
+
+  return (
+    <DetailWrapper>
+      {/* 3. Title 컴포넌트를 <Link>로 사용하고, 클릭 시 이동할 경로를 지정합니다. */}
+      {/* (링크 클릭 시 모달이 닫히도록 onClose도 호출해줍니다) */}
+      <Title 
+        as={Link} 
+        to={`/trip/${details.id}`}
+        onClick={onClose}
+      >
+        {details.title}
+      </Title>
+      
+      <MemberTable>
+        <Row>
+          <Cell>{details.owner.name}</Cell>
+          <Cell>{details.owner.email}</Cell>
+          <Cell>{details.owner.totalSpend.toLocaleString('ko-KR')}원</Cell>
+        </Row>
+        {details.members.map(member => (
+          <Row key={member.id}>
+            <Cell>{member.name}</Cell>
+            <Cell>{member.userId}</Cell>
+            <Cell>
+              {member.totalSpend.toLocaleString('ko-KR')}원
+            </Cell>
+          </Row>
+        ))}
+      </MemberTable>
+    </DetailWrapper>
+  );
+}
+
+/** (껍데기) 모달 컴포넌트 */
+function Modal({ isOpen, onClose, children }) {
+  if (!isOpen) {
+    return null;
+  }
+  return (
+    // 4. 배경 클릭 시 닫기
+    <Backdrop onClick={onClose}>
+      <ModalContainer onClick={(e) => e.stopPropagation()}>
+        <CloseButtonWrapper>
+          <Button text="X" onClick={onClose} variant="secondary" />
+        </CloseButtonWrapper>
+        {children}
+      </ModalContainer>
+    </Backdrop>
+  );
+}
+
+// --- 6. 메인 Trips 컴포넌트 ---
 function Trips() {
   const [allTravelList, setAllTravelList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [infoMessage, setInfoMessage] = useState('');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
+  
+  const [selectedTripId, setSelectedTripId] = useState(null);
 
   useEffect(() => {
     async function fetchTravels() {
@@ -116,7 +316,9 @@ function Trips() {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         });
         if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
-        const data = await response.json();
+        
+        const data = await response.json(); 
+        
         if (data && data.length > 0) {
           setAllTravelList(data);
         } else {
@@ -145,16 +347,26 @@ function Trips() {
 
   const isAllVisible = !loading && visibleCount >= allTravelList.length;
   const buttonText = isAllVisible ? "접기" : "더보기";
+  
+  const handleCardClick = (tripId) => {
+    setSelectedTripId(tripId);
+  };
+  const handleCloseModal = () => {
+    setSelectedTripId(null);
+  };
+
+  const selectedTrip = allTravelList.find(
+    (trip) => trip.id === selectedTripId
+  );
 
   return (
-    // 3. JSX를 스타일 컴포넌트로 교체
     <Wrapper>
       <GlobalPageReset /> 
       <Header />
       
       <Main>
          <TopBar>
-          <Button text="+ 여행 추가하기" variant="primary" to="/GroupCreate" />
+          <Button text="+ 여행 추가하기" variant="primary" to="/groupcreate" />
         </TopBar>
         
         {infoMessage && (
@@ -166,12 +378,17 @@ function Trips() {
             <p>여행 목록을 불러오는 중입니다...</p>
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => (
-              <Card key={travel.id}>
-                <ImagePlaceholder>
-                  <span>(이미지 영역)</span>
-                </ImagePlaceholder>
-                <h3>{travel.title}</h3>
-                <p>{travel.description}</p>
+              <Card 
+                key={travel.id}
+                onClick={() => handleCardClick(travel.id)}
+              >
+                <>
+                  <ImagePlaceholder>
+                    <span>(이미지 영역)</span>
+                  </ImagePlaceholder>
+                  <h3>{travel.title}</h3>
+                  <p>{travel.description}</p>
+                </>
               </Card>
             ))
           )}
@@ -185,6 +402,11 @@ function Trips() {
       </Main>
 
       <Footer />
+      
+      <Modal isOpen={!!selectedTrip} onClose={handleCloseModal}>
+        {/* 5. 모달 닫기 함수도 전달 (링크 클릭 시 모달이 닫히도록) */}
+        <TripDetailModal trip={selectedTrip} onClose={handleCloseModal} />
+      </Modal>
     </Wrapper>
   );
 }
