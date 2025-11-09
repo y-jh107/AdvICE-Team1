@@ -15,13 +15,13 @@ const PageWrapper = styled.div`
   justify-content: center;
   min-height: 100vh;
   background-color: #f8f9fa;
-  padding: 2rem;
+  padding: 6rem 2rem 2rem;
   gap: 5rem;
 
   @media (max-width: 900px) {
     flex-direction: column;
     align-items: center;
-    padding: 1rem;
+    padding: 5rem 1rem 1rem;
     gap: 2rem;
   }
 `;
