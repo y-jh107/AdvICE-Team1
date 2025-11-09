@@ -3,6 +3,8 @@ import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
+// 1. react-router-dom에서 Link를 임포트합니다.
+import { Link } from 'react-router-dom';
 
 // --- CSS 리셋 (파일 내에 정의) ---
 const GlobalPageReset = createGlobalStyle`
@@ -49,13 +51,26 @@ const CloseButtonWrapper = styled.div`
 // --- 2. 모달(알맹이) 스타일 컴포넌트 정의 ---
 const DetailWrapper = styled.div`
   padding: 1rem;
-  margin-top: 2rem; 
+  margin-top: 1rem; 
 `;
 
+// 2. Title 스타일에 링크 관련 스타일 추가
 const Title = styled.h2`
   margin-top: 0;
   margin-bottom: 2rem;
   text-align: center;
+  
+  font-size: 1.8rem;
+  font-weight: 700;
+
+  /* Link로 작동할 때의 스타일 */
+  text-decoration: none;
+  color: inherit; /* 기본 h2 색상 사용 */
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #3b82f6; /* 호버 시 파란색 (Button 컴포넌트와 유사) */
+  }
 `;
 
 const MemberTable = styled.div`
@@ -151,40 +166,100 @@ const InfoMessage = styled.p`
 // --- 스타일 정의 끝 ---
 
 
-// --- 4. 모달용 목업 데이터 정의 ---
+// --- 4. 목업 데이터 정의 (모든 항목에 동일한 팀원 적용) ---
 const mockTravelData = [
-  { id: 1, title: '태국 여행', description: '모임 설명 1' },
-  { id: 2, title: '중딩 친구들과 일본여행', description: '모임 설명 2' },
-  { id: 3, title: '3박 4일 싱가포르 여행', description: '모임 설명 3' },
-  { id: 4, title: '제주도 2박 3일', description: '모임 설명 4' },
-  { id: 5, title: '부산 맛집 투어', description: '모임 설명 5' },
-  { id: 6, title: '강릉 당일치기', description: '모임 설명 6' },
+  { 
+    id: 1, 
+    title: '태국 여행', 
+    description: '모임 설명 1',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 2, 
+    title: '중딩 친구들과 일본여행', 
+    description: '모임 설명 2',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 3, 
+    title: '3박 4일 싱가포르', 
+    description: '모임 설명 3',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 4, 
+    title: '제주도 2박 3일', 
+    description: '모임 설명 4',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 5, 
+    title: '부산 맛집 투어', 
+    description: '모임 설명 5',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
+  { 
+    id: 6, 
+    title: '강릉 당일치기', 
+    description: '모임 설명 6',
+    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+    members: [
+      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+    ]
+  },
 ];
-
-// --- ⬇️ 목업 데이터 수정 ⬇️ ---
-const mockMemberDetails = {
-  id: 1,
-  name: '태국 여행',
-  owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-  members: [
-    { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-    { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-    { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-  ]
-};
-// --- ⬆️ 목업 데이터 수정 ⬆️ ---
 
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트들 정의 (파일 내) ---
 
 /** (알맹이) 상세 정보 테이블 컴포넌트 */
-function TripDetailModal({ tripId }) {
-  const details = mockMemberDetails;
+function TripDetailModal({ trip, onClose }) {
+  
+  if (!trip) {
+    return null;
+  }
+  const details = trip;
 
   return (
     <DetailWrapper>
-      <Title>{details.name}</Title>
+      {/* 3. Title 컴포넌트를 <Link>로 사용하고, 클릭 시 이동할 경로를 지정합니다. */}
+      {/* (링크 클릭 시 모달이 닫히도록 onClose도 호출해줍니다) */}
+      <Title 
+        as={Link} 
+        to={`/trip/${details.id}`}
+        onClick={onClose}
+      >
+        {details.title}
+      </Title>
+      
       <MemberTable>
         <Row>
           <Cell>{details.owner.name}</Cell>
@@ -195,11 +270,9 @@ function TripDetailModal({ tripId }) {
           <Row key={member.id}>
             <Cell>{member.name}</Cell>
             <Cell>{member.userId}</Cell>
-            {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
             <Cell>
               {member.totalSpend.toLocaleString('ko-KR')}원
             </Cell>
-            {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
           </Row>
         ))}
       </MemberTable>
@@ -213,6 +286,7 @@ function Modal({ isOpen, onClose, children }) {
     return null;
   }
   return (
+    // 4. 배경 클릭 시 닫기
     <Backdrop onClick={onClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <CloseButtonWrapper>
@@ -242,7 +316,9 @@ function Trips() {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         });
         if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
-        const data = await response.json();
+        
+        const data = await response.json(); 
+        
         if (data && data.length > 0) {
           setAllTravelList(data);
         } else {
@@ -278,6 +354,10 @@ function Trips() {
   const handleCloseModal = () => {
     setSelectedTripId(null);
   };
+
+  const selectedTrip = allTravelList.find(
+    (trip) => trip.id === selectedTripId
+  );
 
   return (
     <Wrapper>
@@ -323,8 +403,9 @@ function Trips() {
 
       <Footer />
       
-      <Modal isOpen={!!selectedTripId} onClose={handleCloseModal}>
-        <TripDetailModal tripId={selectedTripId} />
+      <Modal isOpen={!!selectedTrip} onClose={handleCloseModal}>
+        {/* 5. 모달 닫기 함수도 전달 (링크 클릭 시 모달이 닫히도록) */}
+        <TripDetailModal trip={selectedTrip} onClose={handleCloseModal} />
       </Modal>
     </Wrapper>
   );
