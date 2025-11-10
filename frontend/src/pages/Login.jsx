@@ -17,6 +17,7 @@ const PageWrapper = styled.div`
   @media (max-width: 900px) {
     flex-direction: column-reverse;
     justify-content: flex-start;
+    padding: 5rem 1rem 1rem;
   }
 `;
 

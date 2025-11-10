@@ -6,6 +6,7 @@ import { ko } from "date-fns/locale";
 import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
+import { API_BASE_URL } from "../config";
 
 // === 스타일 컴포넌트 ===
 const PageWrapper = styled.div`
@@ -232,22 +233,39 @@ export default function GroupCreate() {
   };
 
   // 제출
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim()) return alert("여행명을 입력하세요.");
     if (!startDate || !endDate) return alert("여행 기간을 선택하세요.");
     if (startDate > endDate) return alert("가는 날은 오는 날보다 이전이어야 합니다.");
     if (description.length > 30) return;
 
-    const tripData = {
-      name,
-      groupImage,
-      members: members.filter((m) => m.trim()),
-      startDate,
-      endDate,
-      description,
-    };
+    const formData = new FormData();
+    formData.append("name", name);
+    if (imageFile) formData.append("groupImage", imageFile);
+    formData.append("startDate", startDate.toISOString());
+    formData.append("endDate", endDate.toISOString());
+    formData.append("description", description);
+    formData.append("members", JSON.stringify(members.filter((m) => m.trim())));
 
-    navigate("/trips", { state: { newTrip: tripData } });
+    try {
+      const response = await fetch(`${API_BASE_URL}/group-create`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "모임 생성 실패");
+        return;
+      }
+
+      alert("모임 생성 성공!");
+      navigate("/trips", { state: { newTrip: data.data } });
+    } catch (err) {
+      console.error(err);
+      alert("서버와 연결할 수 없습니다.");
+    }
   };
 
   return (
