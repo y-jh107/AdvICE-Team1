@@ -3,7 +3,6 @@ import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
-// 1. react-router-dom의 Link를 임포트합니다.
 import { Link } from 'react-router-dom';
 
 // --- CSS 리셋 (파일 내에 정의) ---
@@ -31,7 +30,6 @@ const Backdrop = styled.div`
   align-items: center;
   z-index: 2000; 
 `;
-// ... (ModalContainer, CloseButtonWrapper 스타일은 동일)
 const ModalContainer = styled.div`
   width: 90%;
   max-width: 600px; 
@@ -47,23 +45,24 @@ const CloseButtonWrapper = styled.div`
   right: 1rem;
 `;
 
-
 // --- 2. 모달(알맹이) 스타일 컴포넌트 정의 ---
 const DetailWrapper = styled.div`
   padding: 0;
   margin-top: 0; 
 `;
-
-// 2. Title에서 'as={Link}' 및 Link 관련 스타일 제거
 const Title = styled.h2`
   margin-top: 0;
   margin-bottom: 2rem;
   text-align: center;
   font-size: 1.8rem; 
   font-weight: 700;  
+  text-decoration: none;
   color: inherit; 
+  transition: color 0.2s ease;
+  &:hover {
+    color: #3b82f6; 
+  }
 `;
-// ... (MemberTable, Row, Cell 스타일은 동일)
 const MemberTable = styled.div`
   display: flex;
   flex-direction: column;
@@ -76,7 +75,6 @@ const Row = styled.div`
   align-items: center;
   padding: 0.75rem 1rem;
   border-radius: 6px;
-
   &:first-child {
     background-color: #f4f6f8;
     font-weight: bold;
@@ -95,7 +93,6 @@ const Wrapper = styled.div`
   flex-direction: column;
   min-height: 100vh;
 `;
-// ... (Main, TopBar, CardList 스타일은 동일)
 const Main = styled.main`
   flex: 1;
   width: 100%;
@@ -125,15 +122,12 @@ const Card = styled.div`
   width: 300px;
   margin: 0 auto;
   
-  /* 3. Card 자체는 더 이상 Link가 아니므로 'color' 등 스타일 제거 */
-  /* (호버 효과는 그대로 유지) */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   }
 `;
-// ... (ImagePlaceholder, MoreButtonContainer, InfoMessage 스타일은 동일)
 const ImagePlaceholder = styled.div`
   width: 100%;
   height: 180px;
@@ -158,95 +152,107 @@ const InfoMessage = styled.p`
 // --- 스타일 정의 끝 ---
 
 
-// --- 4. 목업 데이터 정의 (동일) ---
+// --- 4. 목업 데이터 정의 ---
+
+// GET /api/group/ (목록) API 실패 시 사용
+// (GroupDto.java에 맞게 'name', 'memo'로 수정)
 const mockTravelData = [
-  { 
-    id: 1, 
-    title: '태국 여행', 
-    description: '모임 설명 1',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  // ... (나머지 목업 데이터)
-  { 
-    id: 2, 
-    title: '중딩 친구들과 일본여행', 
-    description: '모임 설명 2',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-      { id: 104, name: '최은준', userId: 'chj_id', totalSpend: 25000 }
-    ]
-  },
-  { 
-    id: 3, 
-    title: '3박 4일 싱가포르', 
-    description: '모임 설명 3',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-     
-    ]
-  },
-  { 
-    id: 4, 
-    title: '제주도 2박 3일', 
-    description: '모임 설명 4',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 5, 
-    title: '부산 맛집 투어', 
-    description: '모임 설명 5',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-      { id: 104, name: '최은준', userId: 'chj_id', totalSpend: 25000 },
-      { id: 105, name: '최은준ㅁ', userId: 'chj_id', totalSpend: 25000 }
-    ]
-  },
-  { 
-    id: 6, 
-    title: '강릉 당일치기', 
-    description: '모임 설명 6',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
+  { id: 1, name: '태국 여행', memo: '모임 설명 1' },
+  { id: 2, name: '중딩 친구들과 일본여행', memo: '모임 설명 2' },
+  { id: 3, name: '3박 4일 싱가포르', memo: '모임 설명 3' },
+  { id: 4, name: '제주도 2박 3일', memo: '모임 설명 4' },
+  { id: 5, name: '부산 맛집 투어', memo: '모임 설명 5' },
+  { id: 6, name: '강릉 당일치기', memo: '모임 설명 6' },
 ];
+
+// GET /api/group/{id}/ (상세) API 실패 시 사용
+const mockDetailData = { 
+  group: { name: '태국 여행 (임시)' },
+  owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+  members: [
+    { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
+    { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+    { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+  ],
+  expenses: []
+};
 
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트들 정의 (파일 내) ---
 
 /** (알맹이) 상세 정보 테이블 컴포넌트 */
-// 4. onClose prop 제거 (더 이상 제목을 클릭해 닫지 않음)
-function TripDetailModal({ trip }) {
-  if (!trip) return null;
-  const details = trip;
+function TripDetailModal({ tripId, onClose }) {
+  
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!tripId) return; 
+
+    async function fetchTripDetails() {
+      setLoading(true);
+      setError(null);
+      try {
+        const accessToken = localStorage.getItem("authToken"); 
+        if (!accessToken) {
+          throw new Error("로그인이 필요합니다. (AR)");
+        }
+
+        // 명세서 API (GET /api/group/{id}/) 호출
+        const response = await fetch(`/api/group/${tripId}/`, {
+          headers: { 
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP 에러: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+
+        if (responseData.code === "SU") {
+          setDetails(responseData.data); 
+        } else {
+          throw new Error(responseData.message || "알 수 없는 API 오류");
+        }
+        
+      } catch (err) {
+        console.error("모달 데이터 로딩 실패:", err);
+        setError(err.message);
+        setDetails(mockDetailData);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTripDetails();
+  }, [tripId]); 
+
+  if (loading) return <DetailWrapper><p>상세 정보를 불러오는 중...</p></DetailWrapper>;
+  if (!details) return <DetailWrapper><p>데이터가 없습니다.</p></DetailWrapper>;
+
   return (
     <DetailWrapper>
-      {}
-      <Title>
-        {details.title}
+      {error && (
+        <InfoMessage>
+          {error} (임시 데이터가 표시됩니다.)
+        </InfoMessage>
+      )}
+
+      {/* 명세서의 'group.name' 사용 */}
+      <Title 
+        as={Link} 
+        to={`/trip/${tripId}`} 
+        onClick={onClose}
+      >
+        {details.group.name}
       </Title>
+      
+      {/* (가정) details.owner와 details.members가 존재한다고 가정 */}
       <MemberTable>
         <Row>
           <Cell>{details.owner.name}</Cell>
@@ -300,13 +306,13 @@ function Trips() {
   const hoverTimerRef = useRef(null); 
   const leaveTimerRef = useRef(null); 
 
-  // (useEffect, handleMoreClick 등은 동일)
+  // 목록 API('GET /api/group/') 호출
   useEffect(() => {
     async function fetchTravels() {
       setLoading(true);
       setInfoMessage('');
       try {
-        const response = await fetch('/api/groups/', {
+        const response = await fetch('/api/group/', { // (수정된 목록 API 주소)
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         });
         if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
@@ -342,34 +348,30 @@ function Trips() {
   const isAllVisible = !loading && visibleCount >= allTravelList.length;
   const buttonText = isAllVisible ? "접기" : "더보기";
   
-  // (호버 로직은 이전과 동일: 2초 딜레이로 열기, 0.5초 딜레이로 닫기)
   const handleCloseModal = () => {
     clearTimeout(hoverTimerRef.current);
     clearTimeout(leaveTimerRef.current);
     setSelectedTripId(null);
   };
 
+  // --- ⬇️ 수정된 부분 ⬇️ ---
   const handleCardEnter = (tripId) => {
     clearTimeout(leaveTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
       setSelectedTripId(tripId);
-    }, 1000); // 1.5초
+    }, 1000); // 1000ms = 1초
   };
+  // --- ⬆️ 수정된 부분 ⬆️ ---
 
   const handleMouseLeave = () => {
     clearTimeout(hoverTimerRef.current);
     leaveTimerRef.current = setTimeout(() => {
       setSelectedTripId(null);
-    }, 500); // 0.5초
+    }, 500); 
   };
-
   const handleModalEnter = () => {
     clearTimeout(leaveTimerRef.current);
   };
-
-  const selectedTrip = allTravelList.find(
-    (trip) => trip.id === selectedTripId
-  );
 
   return (
     <Wrapper>
@@ -390,7 +392,6 @@ function Trips() {
             <p>여행 목록을 불러오는 중입니다...</p>
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => (
-              // 6. Card를 <Link>로 감싸서 클릭 시 페이지 이동
               <Link 
                 key={travel.id} 
                 to={`/trip/${travel.id}`} 
@@ -404,8 +405,9 @@ function Trips() {
                     <ImagePlaceholder>
                       <span>(이미지 영역)</span>
                     </ImagePlaceholder>
-                    <h3>{travel.title}</h3>
-                    <p>{travel.description}</p>
+                    {/* DTO에 맞게 'name'과 'memo'로 수정 */}
+                    <h3>{travel.name}</h3>
+                    <p>{travel.memo}</p>
                   </>
                 </Card>
               </Link>
@@ -423,13 +425,12 @@ function Trips() {
       <Footer />
       
       <Modal 
-        isOpen={!!selectedTrip} 
+        isOpen={!!selectedTripId} 
         onClose={handleCloseModal}
         onMouseEnter={handleModalEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* 7. onClose prop을 제거 */}
-        <TripDetailModal trip={selectedTrip} />
+        <TripDetailModal tripId={selectedTripId} onClose={handleCloseModal} />
       </Modal>
     </Wrapper>
   );
