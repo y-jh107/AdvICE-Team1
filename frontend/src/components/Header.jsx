@@ -10,16 +10,19 @@ import logoImage from "../assets/Logo.png";
 
 // --- Styled Components ---
 const HeaderContainer = styled.header`
-  display: flex;
+ display: flex;
   justify-content: space-between;
-  hight: 6.1rem;
-  weight: 140rem;
-  max-width: 160rem;
   align-items: center;
+  height: 6.1rem;
+  width: 100%;
   padding: 1rem 2%;
   background-color: white;
   border-bottom: 1.9rem solid #3b82f6;
   box-sizing: border-box;
+  position: fixed; 
+  top: 0;          
+  left: 0;         
+  z-index: 1000;
 `;
 
 const Logo = styled.img`
