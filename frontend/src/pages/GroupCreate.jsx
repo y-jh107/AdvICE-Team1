@@ -1,4 +1,3 @@
-// src/pages/GroupCreate.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
@@ -98,15 +97,13 @@ const Section = styled.div`
   margin-bottom: 2rem;
 `;
 
-// === 스타일 컴포넌트 ===
 const SectionTitle = styled.h3`
   font-size: 1.05rem;
   margin: 0 0 0.5rem 0;
   color: #444;
-  font-weight: normal; /* 볼드 제거 */
-  text-align: left; /* 좌측 정렬 */
+  font-weight: normal;
+  text-align: left;
 `;
-
 
 const MemberRow = styled.div`
   display: flex;
@@ -186,23 +183,20 @@ const ErrorText = styled.span`
 `;
 
 // === 메인 컴포넌트 ===
-// groupname => name
 export default function GroupCreate() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  const initialGroupName = state?.groupName || "";
+  const initialName = state?.name || "";
 
-  const [groupName, setGroupName] = useState(initialGroupName);
-  const [groupImage, setGroupImage] = useState(null); // string | null
-  const [imageFile, setImageFile] = useState(null); // File | null
+  const [name, setName] = useState(initialName);
+  const [groupImage, setGroupImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [members, setMembers] = useState([""]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [description, setDescription] = useState("");
   const [descError, setDescError] = useState("");
-
-  const currentUser = { name: "김여비", email: "YeoBi@example.com" };
 
   // 설명 30자 제한
   useEffect(() => {
@@ -220,7 +214,7 @@ export default function GroupCreate() {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setGroupImage(reader.result); // TypeScript 없이 그대로 사용
+        setGroupImage(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -239,19 +233,18 @@ export default function GroupCreate() {
 
   // 제출
   const handleSubmit = () => {
-    if (!groupName.trim()) return alert("여행명을 입력하세요.");
+    if (!name.trim()) return alert("여행명을 입력하세요.");
     if (!startDate || !endDate) return alert("여행 기간을 선택하세요.");
     if (startDate > endDate) return alert("가는 날은 오는 날보다 이전이어야 합니다.");
     if (description.length > 30) return;
 
     const tripData = {
-      groupName,
+      name,
       groupImage,
-      members: members.filter(m => m.trim()),
+      members: members.filter((m) => m.trim()),
       startDate,
       endDate,
       description,
-      createdBy: currentUser,
     };
 
     navigate("/trips", { state: { newTrip: tripData } });
@@ -259,7 +252,6 @@ export default function GroupCreate() {
 
   return (
     <PageWrapper>
-      {/* 왼쪽: 대표 사진 */}
       <LeftSection>
         <ImageUploadWrapper>
           {groupImage ? (
@@ -279,20 +271,17 @@ export default function GroupCreate() {
         </ImageUploadWrapper>
       </LeftSection>
 
-      {/* 오른쪽: 폼 */}
       <RightSection>
-        {/* 여행명 */}
         <Section>
           <SectionTitle>여행명</SectionTitle>
           <InputField
             type="text"
             placeholder="여행명을 입력하세요"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </Section>
 
-        {/* 여행원 */}
         <Section>
           <SectionTitle>여행원</SectionTitle>
           {members.map((member, index) => (
@@ -303,11 +292,7 @@ export default function GroupCreate() {
                 value={member}
                 onChange={(e) => handleMemberChange(index, e.target.value)}
               />
-              <MemberInput
-                type="email"
-                placeholder="아이디 (이메일)"
-                disabled
-              />
+              <MemberInput type="email" placeholder="아이디 (이메일)" disabled />
               {members.length > 1 && (
                 <RemoveButton type="button" onClick={() => removeMember(index)}>
                   삭제
@@ -318,7 +303,6 @@ export default function GroupCreate() {
           <AddMemberButton text="추가하기" onClick={addMember} />
         </Section>
 
-        {/* 여행 기간 */}
         <Section>
           <SectionTitle>여행 기간</SectionTitle>
           <DateRow>
@@ -353,7 +337,6 @@ export default function GroupCreate() {
           </DateRow>
         </Section>
 
-        {/* 모임 설명 */}
         <Section>
           <SectionTitle>모임 설명</SectionTitle>
           <Textarea
@@ -368,7 +351,6 @@ export default function GroupCreate() {
           </CharCount>
         </Section>
 
-        {/* 저장 버튼 */}
         <Button text="저장" onClick={handleSubmit} />
       </RightSection>
     </PageWrapper>
