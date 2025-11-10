@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
-// 1. react-router-dom에서 Link를 임포트합니다.
+// 1. react-router-dom의 Link를 임포트합니다.
 import { Link } from 'react-router-dom';
 
 // --- CSS 리셋 (파일 내에 정의) ---
@@ -31,54 +31,44 @@ const Backdrop = styled.div`
   align-items: center;
   z-index: 2000; 
 `;
-
+// ... (ModalContainer, CloseButtonWrapper 스타일은 동일)
 const ModalContainer = styled.div`
   width: 90%;
   max-width: 600px; 
   background-color: white;
-  padding: 2rem;
+  padding: 1.5rem 2rem 2rem 2rem; 
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
 `;
-
 const CloseButtonWrapper = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
 `;
 
+
 // --- 2. 모달(알맹이) 스타일 컴포넌트 정의 ---
 const DetailWrapper = styled.div`
-  padding: 1rem;
-  margin-top: 1rem; 
+  padding: 0;
+  margin-top: 0; 
 `;
 
-// 2. Title 스타일에 링크 관련 스타일 추가
+// 2. Title에서 'as={Link}' 및 Link 관련 스타일 제거
 const Title = styled.h2`
   margin-top: 0;
   margin-bottom: 2rem;
   text-align: center;
-  
-  font-size: 1.8rem;
-  font-weight: 700;
-
-  /* Link로 작동할 때의 스타일 */
-  text-decoration: none;
-  color: inherit; /* 기본 h2 색상 사용 */
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #3b82f6; /* 호버 시 파란색 (Button 컴포넌트와 유사) */
-  }
+  font-size: 1.8rem; 
+  font-weight: 700;  
+  color: inherit; 
 `;
-
+// ... (MemberTable, Row, Cell 스타일은 동일)
 const MemberTable = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 `;
-
 const Row = styled.div`
   display: grid;
   grid-template-columns: 1fr 2fr 1.5fr; 
@@ -92,7 +82,6 @@ const Row = styled.div`
     font-weight: bold;
   }
 `;
-
 const Cell = styled.div`
   font-size: 0.95rem;
   &:last-child {
@@ -106,6 +95,7 @@ const Wrapper = styled.div`
   flex-direction: column;
   min-height: 100vh;
 `;
+// ... (Main, TopBar, CardList 스타일은 동일)
 const Main = styled.main`
   flex: 1;
   width: 100%;
@@ -135,13 +125,15 @@ const Card = styled.div`
   width: 300px;
   margin: 0 auto;
   
-  cursor: pointer;
+  /* 3. Card 자체는 더 이상 Link가 아니므로 'color' 등 스타일 제거 */
+  /* (호버 효과는 그대로 유지) */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   }
 `;
+// ... (ImagePlaceholder, MoreButtonContainer, InfoMessage 스타일은 동일)
 const ImagePlaceholder = styled.div`
   width: 100%;
   height: 180px;
@@ -166,7 +158,7 @@ const InfoMessage = styled.p`
 // --- 스타일 정의 끝 ---
 
 
-// --- 4. 목업 데이터 정의 (모든 항목에 동일한 팀원 적용) ---
+// --- 4. 목업 데이터 정의 (동일) ---
 const mockTravelData = [
   { 
     id: 1, 
@@ -179,6 +171,7 @@ const mockTravelData = [
       { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
     ]
   },
+  // ... (나머지 목업 데이터)
   { 
     id: 2, 
     title: '중딩 친구들과 일본여행', 
@@ -188,6 +181,7 @@ const mockTravelData = [
       { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
       { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
       { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+      { id: 104, name: '최은준', userId: 'chj_id', totalSpend: 25000 }
     ]
   },
   { 
@@ -198,7 +192,7 @@ const mockTravelData = [
     members: [
       { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
       { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+     
     ]
   },
   { 
@@ -221,6 +215,8 @@ const mockTravelData = [
       { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
       { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
       { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+      { id: 104, name: '최은준', userId: 'chj_id', totalSpend: 25000 },
+      { id: 105, name: '최은준ㅁ', userId: 'chj_id', totalSpend: 25000 }
     ]
   },
   { 
@@ -241,25 +237,16 @@ const ITEMS_PER_LOAD = 3;
 // --- 5. 모달 컴포넌트들 정의 (파일 내) ---
 
 /** (알맹이) 상세 정보 테이블 컴포넌트 */
-function TripDetailModal({ trip, onClose }) {
-  
-  if (!trip) {
-    return null;
-  }
+// 4. onClose prop 제거 (더 이상 제목을 클릭해 닫지 않음)
+function TripDetailModal({ trip }) {
+  if (!trip) return null;
   const details = trip;
-
   return (
     <DetailWrapper>
-      {/* 3. Title 컴포넌트를 <Link>로 사용하고, 클릭 시 이동할 경로를 지정합니다. */}
-      {/* (링크 클릭 시 모달이 닫히도록 onClose도 호출해줍니다) */}
-      <Title 
-        as={Link} 
-        to={`/trip/${details.id}`}
-        onClick={onClose}
-      >
+      {}
+      <Title>
         {details.title}
       </Title>
-      
       <MemberTable>
         <Row>
           <Cell>{details.owner.name}</Cell>
@@ -270,9 +257,7 @@ function TripDetailModal({ trip, onClose }) {
           <Row key={member.id}>
             <Cell>{member.name}</Cell>
             <Cell>{member.userId}</Cell>
-            <Cell>
-              {member.totalSpend.toLocaleString('ko-KR')}원
-            </Cell>
+            <Cell>{member.totalSpend.toLocaleString('ko-KR')}원</Cell>
           </Row>
         ))}
       </MemberTable>
@@ -281,14 +266,19 @@ function TripDetailModal({ trip, onClose }) {
 }
 
 /** (껍데기) 모달 컴포넌트 */
-function Modal({ isOpen, onClose, children }) {
+function Modal({ isOpen, onClose, children, onMouseEnter, onMouseLeave }) {
   if (!isOpen) {
     return null;
   }
   return (
-    // 4. 배경 클릭 시 닫기
-    <Backdrop onClick={onClose}>
-      <ModalContainer onClick={(e) => e.stopPropagation()}>
+    <Backdrop 
+      onClick={onClose}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <ModalContainer 
+        onClick={(e) => e.stopPropagation()}
+      >
         <CloseButtonWrapper>
           <Button text="X" onClick={onClose} variant="secondary" />
         </CloseButtonWrapper>
@@ -306,7 +296,11 @@ function Trips() {
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
   
   const [selectedTripId, setSelectedTripId] = useState(null);
+  
+  const hoverTimerRef = useRef(null); 
+  const leaveTimerRef = useRef(null); 
 
+  // (useEffect, handleMoreClick 등은 동일)
   useEffect(() => {
     async function fetchTravels() {
       setLoading(true);
@@ -348,11 +342,29 @@ function Trips() {
   const isAllVisible = !loading && visibleCount >= allTravelList.length;
   const buttonText = isAllVisible ? "접기" : "더보기";
   
-  const handleCardClick = (tripId) => {
-    setSelectedTripId(tripId);
-  };
+  // (호버 로직은 이전과 동일: 2초 딜레이로 열기, 0.5초 딜레이로 닫기)
   const handleCloseModal = () => {
+    clearTimeout(hoverTimerRef.current);
+    clearTimeout(leaveTimerRef.current);
     setSelectedTripId(null);
+  };
+
+  const handleCardEnter = (tripId) => {
+    clearTimeout(leaveTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setSelectedTripId(tripId);
+    }, 1000); // 1.5초
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimerRef.current);
+    leaveTimerRef.current = setTimeout(() => {
+      setSelectedTripId(null);
+    }, 500); // 0.5초
+  };
+
+  const handleModalEnter = () => {
+    clearTimeout(leaveTimerRef.current);
   };
 
   const selectedTrip = allTravelList.find(
@@ -378,18 +390,25 @@ function Trips() {
             <p>여행 목록을 불러오는 중입니다...</p>
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => (
-              <Card 
-                key={travel.id}
-                onClick={() => handleCardClick(travel.id)}
+              // 6. Card를 <Link>로 감싸서 클릭 시 페이지 이동
+              <Link 
+                key={travel.id} 
+                to={`/trip/${travel.id}`} 
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <>
-                  <ImagePlaceholder>
-                    <span>(이미지 영역)</span>
-                  </ImagePlaceholder>
-                  <h3>{travel.title}</h3>
-                  <p>{travel.description}</p>
-                </>
-              </Card>
+                <Card 
+                  onMouseEnter={() => handleCardEnter(travel.id)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <>
+                    <ImagePlaceholder>
+                      <span>(이미지 영역)</span>
+                    </ImagePlaceholder>
+                    <h3>{travel.title}</h3>
+                    <p>{travel.description}</p>
+                  </>
+                </Card>
+              </Link>
             ))
           )}
         </CardList>
@@ -403,9 +422,14 @@ function Trips() {
 
       <Footer />
       
-      <Modal isOpen={!!selectedTrip} onClose={handleCloseModal}>
-        {/* 5. 모달 닫기 함수도 전달 (링크 클릭 시 모달이 닫히도록) */}
-        <TripDetailModal trip={selectedTrip} onClose={handleCloseModal} />
+      <Modal 
+        isOpen={!!selectedTrip} 
+        onClose={handleCloseModal}
+        onMouseEnter={handleModalEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* 7. onClose prop을 제거 */}
+        <TripDetailModal trip={selectedTrip} />
       </Modal>
     </Wrapper>
   );
