@@ -6,6 +6,7 @@ import com.advice.team1.backend.domain.entity.User;
 import com.advice.team1.backend.domain.dto.SignInDto;  // 실제 DTO 경로에 맞춰주세요
 import com.advice.team1.backend.domain.dto.SignUpDto; // (interfaces.auth.dto 라면 그 경로로 변경)
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ public class AuthService {
 
     private final UserRepository users;
     private final JwtService jwt; // 임시 토큰 스텁 (실제 JWT 모듈 붙으면 교체)
+    private final BCryptPasswordEncoder passwordEncoder;
 
     /**
      * 회원가입
@@ -33,6 +35,8 @@ public class AuthService {
         User u = User.builder()
                 .name(req.name())
                 .email(req.email())
+                .phone(req.phone())
+                .password(passwordEncoder.encode(req.password()))
                 .build();
 
         users.save(u);

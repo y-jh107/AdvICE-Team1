@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
     @Query("""
-        select new com.advice.team1.backend.domain.mypage.dto.MyPageGroupListDto(
+        select new com.advice.team1.backend.domain.dto.MyPageGroupListDto(
             g.id, g.name
         )
         from GroupMember gm

@@ -15,6 +15,7 @@ import java.util.Date;
 public class Expense {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="expense_id")
     private Long id;
 
     private String name;
@@ -28,6 +29,6 @@ public class Expense {
     private String splitMode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
+    @JoinColumn(name = "team_id")
     private Group group;
 }

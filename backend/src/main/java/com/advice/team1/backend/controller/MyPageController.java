@@ -11,7 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 
@@ -23,9 +26,9 @@ public class MyPageController {
 
     private final MyPageService myPageService;
 
-    @GetMapping("/{userid}")
+    @GetMapping
     public ResponseEntity<ApiResponse<MyPageDto>> getMyPage(
-        @PathVariable("userId") Long pathUserId,
+        @RequestParam("userId") Long pathUserId,
         @AuthenticationPrincipal CustomUserPrincipal me,
         @RequestParam(required = false) Instant from,
         @RequestParam(required = false) Instant to

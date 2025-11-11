@@ -21,7 +21,7 @@ public class CalendarService {
     private final GroupRepository groupRepository;
     private final ExpenseRepository expenseRepository;
 
-    public void addEvent(Long groupId, EventDto.Request request) {
+    public Event addEvent(Long groupId, EventDto.Request request) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
 
@@ -29,9 +29,12 @@ public class CalendarService {
                 .name(request.getName())
                 .date(request.getDate())
                 .location(request.getLocation())
+                .group(group)
                 .build();
 
         eventRepository.save(event);
+
+        return event;
     }
 
     public EventDto.Response getEvent(Long groupId, Long eventId) {

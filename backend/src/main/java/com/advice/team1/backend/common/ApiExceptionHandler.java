@@ -1,12 +1,14 @@
 package com.advice.team1.backend.common;
 
 import com.advice.team1.backend.common.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -37,7 +39,8 @@ public class ApiExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAny(Exception ex) {
         // 로그 추가 예정
+        log.error("Unexpected server error: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>("DBE", "서버 오류가 발생했습니다.", null));
+                .body(new ApiResponse<>("DBE", "DB 오류가 발생했습니다.", null));
     }
 }
