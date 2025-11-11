@@ -24,6 +24,12 @@ const GlobalStyle = createGlobalStyle`
   button, input {
     font-family: inherit;
   }
+  
+  /* 커서 숨기기*/
+  input, textarea {
+    caret-color: transparent;
+    outline:  none; 
+  }
 `;
 
 export default GlobalStyle;

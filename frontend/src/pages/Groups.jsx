@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
-// 1. react-router-dom에서 Link를 임포트합니다.
 import { Link } from 'react-router-dom';
 
-// --- CSS 리셋 (파일 내에 정의) ---
+// --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
   body {
     margin: 0; 
@@ -18,7 +17,7 @@ const GlobalPageReset = createGlobalStyle`
   }
 `;
 
-// --- 1. 모달(껍데기) 스타일 컴포넌트 정의 ---
+// --- 1. 모달 스타일 ---
 const Backdrop = styled.div`
   position: fixed;
   top: 0;
@@ -31,54 +30,44 @@ const Backdrop = styled.div`
   align-items: center;
   z-index: 2000; 
 `;
-
 const ModalContainer = styled.div`
   width: 90%;
   max-width: 600px; 
   background-color: white;
-  padding: 2rem;
+  padding: 1.5rem 2rem 2rem 2rem; 
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
 `;
-
 const CloseButtonWrapper = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
 `;
 
-// --- 2. 모달(알맹이) 스타일 컴포넌트 정의 ---
+// --- 2. 모달 내용 스타일 ---
 const DetailWrapper = styled.div`
-  padding: 1rem;
-  margin-top: 1rem; 
+  padding: 0;
+  margin-top: 0; 
 `;
-
-// 2. Title 스타일에 링크 관련 스타일 추가
 const Title = styled.h2`
   margin-top: 0;
   margin-bottom: 2rem;
   text-align: center;
-  
-  font-size: 1.8rem;
-  font-weight: 700;
-
-  /* Link로 작동할 때의 스타일 */
+  font-size: 1.8rem; 
+  font-weight: 700;  
   text-decoration: none;
-  color: inherit; /* 기본 h2 색상 사용 */
+  color: inherit; 
   transition: color 0.2s ease;
-
   &:hover {
-    color: #3b82f6; /* 호버 시 파란색 (Button 컴포넌트와 유사) */
+    color: #3b82f6; 
   }
 `;
-
 const MemberTable = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 `;
-
 const Row = styled.div`
   display: grid;
   grid-template-columns: 1fr 2fr 1.5fr; 
@@ -86,13 +75,11 @@ const Row = styled.div`
   align-items: center;
   padding: 0.75rem 1rem;
   border-radius: 6px;
-
   &:first-child {
     background-color: #f4f6f8;
     font-weight: bold;
   }
 `;
-
 const Cell = styled.div`
   font-size: 0.95rem;
   &:last-child {
@@ -100,7 +87,7 @@ const Cell = styled.div`
   }
 `;
 
-// --- 3. Trips 페이지 스타일 컴포넌트 정의 ---
+// --- 3. Groups 페이지 스타일 ---
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -134,8 +121,6 @@ const Card = styled.div`
   background-color: #ffffff;
   width: 300px;
   margin: 0 auto;
-  
-  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   &:hover {
     transform: translateY(-5px);
@@ -163,101 +148,89 @@ const InfoMessage = styled.p`
   margin-bottom: 20px;
   font-weight: bold;
 `;
-// --- 스타일 정의 끝 ---
 
-
-// --- 4. 목업 데이터 정의 (모든 항목에 동일한 팀원 적용) ---
+// --- 4. 목업 데이터 ---
+// memo -> description으로 수정
 const mockTravelData = [
-  { 
-    id: 1, 
-    title: '태국 여행', 
-    description: '모임 설명 1',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 2, 
-    title: '중딩 친구들과 일본여행', 
-    description: '모임 설명 2',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 3, 
-    title: '3박 4일 싱가포르', 
-    description: '모임 설명 3',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 4, 
-    title: '제주도 2박 3일', 
-    description: '모임 설명 4',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 5, 
-    title: '부산 맛집 투어', 
-    description: '모임 설명 5',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
-  { 
-    id: 6, 
-    title: '강릉 당일치기', 
-    description: '모임 설명 6',
-    owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-    members: [
-      { id: 101, name: '변영현', userId: 'bgun_id', totalSpend: 50000 },
-      { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-      { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-    ]
-  },
+  { id: 1, name: '태국 여행', description: '모임 설명 1' },
+  { id: 2, name: '중딩 친구들과 일본여행', description: '모임 설명 2' },
+  { id: 3, name: '3박 4일 싱가포르', description: '모임 설명 3' },
+  { id: 4, name: '제주도 2박 3일', description: '모임 설명 4' },
+  { id: 5, name: '부산 맛집 투어', description: '모임 설명 5' },
+  { id: 6, name: '강릉 당일치기', description: '모임 설명 6' },
 ];
+
+const mockDetailData = { 
+  group: { name: '태국 여행 (임시)' },
+  owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
+  members: [
+    { id: 101, name: '변영빈', userId: 'bgun_id', totalSpend: 50000 },
+    { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
+    { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
+  ],
+  expenses: []
+};
 
 const ITEMS_PER_LOAD = 3;
 
-// --- 5. 모달 컴포넌트들 정의 (파일 내) ---
+// --- 5. 모달 컴포넌트 ---
+function TripDetailModal({ tripId, onClose }) {
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-/** (알맹이) 상세 정보 테이블 컴포넌트 */
-function TripDetailModal({ trip, onClose }) {
-  
-  if (!trip) {
-    return null;
-  }
-  const details = trip;
+  useEffect(() => {
+    if (!tripId) return; 
+
+    async function fetchTripDetails() {
+      setLoading(true);
+      setError(null);
+      try {
+        const accessToken = localStorage.getItem("authToken"); 
+        if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
+
+        const response = await fetch(`/api/group/${tripId}/`, {
+          headers: { 
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error(`HTTP 에러: ${response.status}`);
+        
+        const responseData = await response.json();
+
+        if (responseData.code === "SU") {
+          setDetails(responseData.data); 
+        } else {
+          throw new Error(responseData.message || "알 수 없는 API 오류");
+        }
+        
+      } catch (err) {
+        console.error("모달 데이터 로딩 실패:", err);
+        setError(err.message);
+        setDetails(mockDetailData);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTripDetails();
+  }, [tripId]); 
+
+  if (loading) return <DetailWrapper><p>상세 정보를 불러오는 중...</p></DetailWrapper>;
+  if (!details) return <DetailWrapper><p>데이터가 없습니다.</p></DetailWrapper>;
 
   return (
     <DetailWrapper>
-      {/* 3. Title 컴포넌트를 <Link>로 사용하고, 클릭 시 이동할 경로를 지정합니다. */}
-      {/* (링크 클릭 시 모달이 닫히도록 onClose도 호출해줍니다) */}
+      {error && <InfoMessage>{error} (임시 데이터가 표시됩니다.)</InfoMessage>}
+
       <Title 
         as={Link} 
-        to={`/trip/${details.id}`}
+        to={`/group/${tripId}`} 
         onClick={onClose}
       >
-        {details.title}
+        {details.group.name}
       </Title>
       
       <MemberTable>
@@ -270,9 +243,7 @@ function TripDetailModal({ trip, onClose }) {
           <Row key={member.id}>
             <Cell>{member.name}</Cell>
             <Cell>{member.userId}</Cell>
-            <Cell>
-              {member.totalSpend.toLocaleString('ko-KR')}원
-            </Cell>
+            <Cell>{member.totalSpend.toLocaleString('ko-KR')}원</Cell>
           </Row>
         ))}
       </MemberTable>
@@ -280,14 +251,14 @@ function TripDetailModal({ trip, onClose }) {
   );
 }
 
-/** (껍데기) 모달 컴포넌트 */
-function Modal({ isOpen, onClose, children }) {
-  if (!isOpen) {
-    return null;
-  }
+function Modal({ isOpen, onClose, children, onMouseEnter, onMouseLeave }) {
+  if (!isOpen) return null;
   return (
-    // 4. 배경 클릭 시 닫기
-    <Backdrop onClick={onClose}>
+    <Backdrop 
+      onClick={onClose}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <CloseButtonWrapper>
           <Button text="X" onClick={onClose} variant="secondary" />
@@ -298,21 +269,23 @@ function Modal({ isOpen, onClose, children }) {
   );
 }
 
-// --- 6. 메인 Trips 컴포넌트 ---
-function Trips() {
+// --- 6. Groups 메인 컴포넌트 ---
+function Groups() {
   const [allTravelList, setAllTravelList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [infoMessage, setInfoMessage] = useState('');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
-  
   const [selectedTripId, setSelectedTripId] = useState(null);
+  
+  const hoverTimerRef = useRef(null); 
+  const leaveTimerRef = useRef(null); 
 
   useEffect(() => {
-    async function fetchTravels() {
+    async function fetchGroups() {
       setLoading(true);
       setInfoMessage('');
       try {
-        const response = await fetch('/api/groups/', {
+        const response = await fetch('/api/groups', { // 수정함
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         });
         if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
@@ -322,42 +295,46 @@ function Trips() {
         if (data && data.length > 0) {
           setAllTravelList(data);
         } else {
-          setInfoMessage('저장된 여행 목록이 없습니다. 예시 데이터를 표시합니다.');
+          setInfoMessage('저장된 모임이 없습니다. 예시 데이터를 표시합니다.');
           setAllTravelList(mockTravelData); 
         }
       } catch (error) {
-        console.error("여행 목록 로딩 실패:", error);
+        console.error("모임 목록 로딩 실패:", error);
         setInfoMessage('데이터를 받아오지 못했습니다. 예시 데이터를 표시합니다.');
         setAllTravelList(mockTravelData); 
       } finally {
         setLoading(false);
       }
     }
-    fetchTravels();
+    fetchGroups();
   }, []); 
 
   const handleMoreClick = () => {
     const isAllVisible = visibleCount >= allTravelList.length;
-    if (isAllVisible) {
-      setVisibleCount(ITEMS_PER_LOAD);
-    } else {
-      setVisibleCount(prevCount => prevCount + ITEMS_PER_LOAD);
-    }
+    setVisibleCount(isAllVisible ? ITEMS_PER_LOAD : prev => prev + ITEMS_PER_LOAD);
   };
 
-  const isAllVisible = !loading && visibleCount >= allTravelList.length;
-  const buttonText = isAllVisible ? "접기" : "더보기";
-  
-  const handleCardClick = (tripId) => {
-    setSelectedTripId(tripId);
-  };
   const handleCloseModal = () => {
+    clearTimeout(hoverTimerRef.current);
+    clearTimeout(leaveTimerRef.current);
     setSelectedTripId(null);
   };
 
-  const selectedTrip = allTravelList.find(
-    (trip) => trip.id === selectedTripId
-  );
+  const handleCardEnter = (tripId) => {
+    clearTimeout(leaveTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setSelectedTripId(tripId);
+    }, 1000);
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimerRef.current);
+    leaveTimerRef.current = setTimeout(() => setSelectedTripId(null), 500);
+  };
+  const handleModalEnter = () => clearTimeout(leaveTimerRef.current);
+
+  const isAllVisible = !loading && visibleCount >= allTravelList.length;
+  const buttonText = isAllVisible ? "접기" : "더보기";
 
   return (
     <Wrapper>
@@ -365,31 +342,33 @@ function Trips() {
       <Header />
       
       <Main>
-         <TopBar>
-          <Button text="+ 여행 추가하기" variant="primary" to="/groupcreate" />
+        <TopBar>
+          <Button text="+ 모임 추가하기" variant="primary" to="/groupcreate" />
         </TopBar>
         
-        {infoMessage && (
-          <InfoMessage>{infoMessage}</InfoMessage>
-        )}
+        {infoMessage && <InfoMessage>{infoMessage}</InfoMessage>}
 
         <CardList>
           {loading ? (
-            <p>여행 목록을 불러오는 중입니다...</p>
+            <p>모임 목록을 불러오는 중입니다...</p>
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => (
-              <Card 
-                key={travel.id}
-                onClick={() => handleCardClick(travel.id)}
+              <Link 
+                key={travel.id} 
+                to={`/group/${travel.id}`} // 수정
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <>
+                <Card 
+                  onMouseEnter={() => handleCardEnter(travel.id)}
+                  onMouseLeave={handleMouseLeave}
+                >
                   <ImagePlaceholder>
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
-                  <h3>{travel.title}</h3>
+                  <h3>{travel.name}</h3>
                   <p>{travel.description}</p>
-                </>
-              </Card>
+                </Card>
+              </Link>
             ))
           )}
         </CardList>
@@ -403,12 +382,16 @@ function Trips() {
 
       <Footer />
       
-      <Modal isOpen={!!selectedTrip} onClose={handleCloseModal}>
-        {/* 5. 모달 닫기 함수도 전달 (링크 클릭 시 모달이 닫히도록) */}
-        <TripDetailModal trip={selectedTrip} onClose={handleCloseModal} />
+      <Modal 
+        isOpen={!!selectedTripId} 
+        onClose={handleCloseModal}
+        onMouseEnter={handleModalEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <TripDetailModal tripId={selectedTripId} onClose={handleCloseModal} />
       </Modal>
     </Wrapper>
   );
 }
 
-export default Trips;
+export default Groups;

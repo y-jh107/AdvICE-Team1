@@ -272,7 +272,7 @@ function Mypage() {
                 <li key={item.groupId}>{item.name}</li>
               ))}
             </ul>
-            <Button to="/trips" variant="primary" text={"더보기"} />
+            <Button to="/groups" variant="primary" text={"더보기"} />
           </ListCard>
         </DashboardGrid>
       </MainContent>

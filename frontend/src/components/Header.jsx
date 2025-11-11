@@ -66,7 +66,7 @@ function Header({ userName = "Guest" }) {
       </Link>
 
       <NavLinks>
-        <StyledLink to="/trips">내 여행</StyledLink>
+        <StyledLink to="/groups">내 여행</StyledLink>
         <StyledLink to="/">로그아웃</StyledLink>
         <Button onClick={handleMyPageClick} variant="primary" text={userName} />
       </NavLinks>

@@ -12,6 +12,7 @@ const StyledButton = styled.button`
   text-align: center;
   text-decoration: none;
   border: none;
+  font-weight: normal;
 
   ${({ variant }) =>
     variant === "primary"
