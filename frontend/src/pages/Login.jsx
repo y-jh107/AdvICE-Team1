@@ -113,7 +113,7 @@ export default function Login() {
       localStorage.setItem("refreshToken", data.data.refreshToken);
 
       // 로그인 후 마이페이지 이동
-      window.location.href = "/Trips";
+      window.location.href = "/groups";
     } catch (err) {
       console.error(err);
       alert("서버와 연결할 수 없습니다.");

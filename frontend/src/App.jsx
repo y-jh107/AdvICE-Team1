@@ -36,7 +36,7 @@ function AppWrapper() {
 
         {/* 모임 관련 */}
         <Route path="/groups" element={<Groups />} /> {/* 모임 조회 */}
-        <Route path="/groups/create" element={<GroupCreate />} /> {/* 모임 생성 */}
+        <Route path="/groupcreate" element={<GroupCreate />} /> {/* 모임 생성 */}
 
         {/* 📝 추후 모임 수정 기능 추가 시 사용할 예정 */}
         {/* <Route path="/groups/edit/:id" element={<GroupEdit />} /> */}

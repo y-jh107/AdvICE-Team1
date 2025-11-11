@@ -265,7 +265,7 @@ export default function GroupCreate() {
     formData.append("members", JSON.stringify(membersData));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/group-create`, {
+      const response = await fetch(`${API_BASE_URL}/groups`, {
         method: "POST",
         body: formData,
       });
