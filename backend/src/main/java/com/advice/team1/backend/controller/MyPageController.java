@@ -37,9 +37,7 @@ public class MyPageController {
             from = (from != null) ? from : Instant.now();
             to = (to != null) ? to : Instant.now();
 
-            Long viewerId = (me != null) ? me.getId() : pathUserId;
-
-            MyPageDto body = myPageService.buildMyPage(viewerId, pathUserId, from, to);
+            MyPageDto body = myPageService.buildMyPage(me.getId(), pathUserId, from, to);
 
             return ResponseEntity.ok(ApiResponse.success("마이페이지 조회 성공.", body));
         } catch (AccessDeniedException e) {

@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class EventDto {
 
@@ -16,7 +16,7 @@ public class EventDto {
     @AllArgsConstructor
     public static class Request {
         private String name;
-        private Date date;
+        private LocalDate date;
         private String location;
     }
 
@@ -26,7 +26,7 @@ public class EventDto {
     public static class Response {
         private Long id;
         private String name;
-        private Date date;
+        private LocalDate date;
         private String location;
 
         public static Response from(Event event) {
