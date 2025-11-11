@@ -193,7 +193,7 @@ export default function GroupCreate() {
   const [name, setName] = useState(initialName);
   const [groupImage, setGroupImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [members, setMembers] = useState([""]);
+  const [members, setMembers] = useState([{ name: "", email: "" }]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [description, setDescription] = useState("");
@@ -214,20 +214,20 @@ export default function GroupCreate() {
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setGroupImage(reader.result);
-      };
+      reader.onloadend = () => setGroupImage(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
   // 여행원 관리
-  const addMember = () => setMembers([...members, ""]);
-  const handleMemberChange = (index, value) => {
-    const newMembers = [...members];
-    newMembers[index] = value;
-    setMembers(newMembers);
+  const addMember = () => setMembers([...members, { name: "", email: "" }]);
+
+  const handleMemberChange = (index, field, value) => {
+    const updated = [...members];
+    updated[index][field] = value;
+    setMembers(updated);
   };
+
   const removeMember = (index) => {
     setMembers(members.filter((_, i) => i !== index));
   };
@@ -239,13 +239,30 @@ export default function GroupCreate() {
     if (startDate > endDate) return alert("가는 날은 오는 날보다 이전이어야 합니다.");
     if (description.length > 30) return;
 
+    const userEmail = localStorage.getItem("userEmail");
+    if (!userEmail) {
+      alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+      return;
+    }
+
+    // ✅ members → email + role만 포함해서 전송
+    const membersData = [
+      { email: userEmail, role: "owner" },
+      ...members
+        .filter((m) => m.email.trim())
+        .map((m) => ({
+          email: m.email.trim(),
+          role: "member",
+        })),
+    ];
+
     const formData = new FormData();
     formData.append("name", name);
     if (imageFile) formData.append("groupImage", imageFile);
     formData.append("startDate", startDate.toISOString());
     formData.append("endDate", endDate.toISOString());
     formData.append("description", description);
-    formData.append("members", JSON.stringify(members.filter((m) => m.trim())));
+    formData.append("members", JSON.stringify(membersData));
 
     try {
       const response = await fetch(`${API_BASE_URL}/group-create`, {
@@ -307,10 +324,19 @@ export default function GroupCreate() {
               <MemberInput
                 type="text"
                 placeholder="이름"
-                value={member}
-                onChange={(e) => handleMemberChange(index, e.target.value)}
+                value={member.name}
+                onChange={(e) =>
+                  handleMemberChange(index, "name", e.target.value)
+                }
               />
-              <MemberInput type="email" placeholder="아이디 (이메일)" disabled />
+              <MemberInput
+                type="email"
+                placeholder="이메일"
+                value={member.email}
+                onChange={(e) =>
+                  handleMemberChange(index, "email", e.target.value)
+                }
+              />
               {members.length > 1 && (
                 <RemoveButton type="button" onClick={() => removeMember(index)}>
                   삭제
