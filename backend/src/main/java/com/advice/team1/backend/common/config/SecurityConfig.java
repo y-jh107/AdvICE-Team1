@@ -20,6 +20,7 @@ public class SecurityConfig {
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/**", "/static/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/api/mypage/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();

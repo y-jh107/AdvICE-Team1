@@ -11,13 +11,14 @@ import java.util.List;
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query(value = """
-        select date(spent_at) as d, sum(amount) as total 
-        from expenses
-        where user_id = :userId
-        and (:from is null or spent_at >= :from)
-        and (:to is null or spent_at < :to)
-        group by d
-        order by d
+    select date(e.spent_at) as d, sum(e.amount) as total 
+    from expenses e
+    join team_members gm on gm.team_id = e.team_id
+    where gm.user_id = :userId
+      and (:from is null or e.spent_at >= :from)
+      and (:to is null or e.spent_at < :to)
+    group by d
+    order by d
     """, nativeQuery = true)
     List<Object[]> expensesByDate(@Param("userId") Long userId,
                                   @Param("from")Instant from,
