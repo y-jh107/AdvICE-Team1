@@ -57,7 +57,6 @@ const Title = styled.h2`
   font-size: 1.8rem; 
   font-weight: 700;  
   color: inherit; 
-  /* Link 관련 스타일 (hover, decoration) 제거 */
 `;
 const MemberTable = styled.div`
   display: flex;
@@ -146,7 +145,7 @@ const InfoMessage = styled.p`
 `;
 
 // --- 4. 목업 데이터 ---
-// 필드명 'description' -> 'memo'로 수정 (GroupDto.java 기준)
+// DTO에 맞게 'memo' 사용
 const mockTravelData = [
   { id: 1, name: '태국 여행', memo: '모임 설명 1' },
   { id: 2, name: '중딩 친구들과 일본여행', memo: '모임 설명 2' },
@@ -170,7 +169,7 @@ const mockDetailData = {
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId }) { // 1. onClose prop 제거
+function TripDetailModal({ tripId, onClose }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -182,8 +181,11 @@ function TripDetailModal({ tripId }) { // 1. onClose prop 제거
       setLoading(true);
       setError(null);
       try {
+        // --- ⬇️ 수정된 부분 ⬇️ ---
+        // 'authToken' -> 'accessToken'으로 수정
         const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
+        // --- ⬆️ 수정된 부분 ⬆️ ---
 
         const response = await fetch(`/api/group/${tripId}/`, {
           headers: { 
@@ -221,7 +223,6 @@ function TripDetailModal({ tripId }) { // 1. onClose prop 제거
     <DetailWrapper>
       {error && <InfoMessage>{error} (임시 데이터가 표시됩니다.)</InfoMessage>}
 
-      {/* 2. as={Link}, to=, onClick= 속성 모두 제거 */}
       <Title>
         {details.group.name}
       </Title>
@@ -366,9 +367,11 @@ function Groups() {
                   <ImagePlaceholder>
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
-                  {/* (필드명 수정) 'description' -> 'memo' */}
+                  {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
+                  {/* 'description' -> 'memo'로 수정 */}
                   <h3>{travel.name}</h3>
                   <p>{travel.memo}</p>
+                  {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
                 </Card>
               </Link>
             ))
@@ -390,8 +393,7 @@ function Groups() {
         onMouseEnter={handleModalEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* 3. onClose prop 전달 제거 */}
-        <TripDetailModal tripId={selectedTripId} />
+        <TripDetailModal tripId={selectedTripId} onClose={handleCloseModal} />
       </Modal>
     </Wrapper>
   );
