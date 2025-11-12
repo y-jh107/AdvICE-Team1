@@ -169,7 +169,7 @@ const mockDetailData = {
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId, onClose }) {
+function TripDetailModal({ tripId }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
