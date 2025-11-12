@@ -368,7 +368,7 @@ function Groups() {
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
                   {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
-                  {/* 'description' -> 'memo'로 수정 */}
+                  {/* 'memo'로 수정 */}
                   <h3>{travel.name}</h3>
                   <p>{travel.memo}</p>
                   {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
