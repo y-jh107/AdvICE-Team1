@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Button from '../components/Button'; 
 import { Link } from 'react-router-dom';
+import {API_BASE_URL} from "../config.js";
 
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
@@ -187,8 +188,9 @@ function TripDetailModal({ tripId }) {
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
         // --- ⬆️ 수정된 부분 ⬆️ ---
 
-        const response = await fetch(`/api/group/${tripId}/`, {
-          headers: { 
+        const response = await fetch(`${API_BASE_URL}/groups`, {
+            method: "GET",
+            headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Accept': 'application/json'
           }

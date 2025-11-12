@@ -4,6 +4,7 @@ import InputField from "../components/InputField";
 import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
 import { API_BASE_URL } from "../config";
+import {useNavigate} from "react-router-dom";
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -89,12 +90,13 @@ const SignupText = styled.p`
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/sign-in`, {
+      const response = await fetch(`${API_BASE_URL}/v1/auth/sign-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -113,7 +115,7 @@ export default function Login() {
       localStorage.setItem("refreshToken", data.data.refreshToken);
 
       // 로그인 후 마이페이지 이동
-      window.location.href = "/groups";
+      navigate("/api/groups");
     } catch (err) {
       console.error(err);
       alert("서버와 연결할 수 없습니다.");
