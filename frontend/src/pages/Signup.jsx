@@ -105,7 +105,7 @@ export default function Signup() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/sign-up`, {
+      const response = await fetch(`${API_BASE_URL}/auth/sign-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
