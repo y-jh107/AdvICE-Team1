@@ -19,7 +19,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/**", "/static/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();

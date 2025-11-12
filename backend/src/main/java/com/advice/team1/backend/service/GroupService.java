@@ -31,7 +31,12 @@ public class GroupService {
 
         Group g = Group.builder()
                 .name(req.name())
+                .description(req.description())
+                .startDate(req.startDate())
+                .endDate(req.endDate())
+                .groupImage(req.groupImage())
                 .build();
+
         Group saved = groups.save(g);
 
         if (req.members() != null) {
@@ -59,7 +64,7 @@ public class GroupService {
         }
 
         if (req.members() != null) {
-            groupMembers.deleteAll(g.getGroupMembers());
+            g.getGroupMembers().clear();
             for (GroupMemberRequestDto m : req.members()) {
                 users.findByEmail(m.email()).ifPresent(u -> {
                     GroupMember gm = GroupMember.builder()
