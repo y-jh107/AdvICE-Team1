@@ -56,12 +56,7 @@ const Title = styled.h2`
   text-align: center;
   font-size: 1.8rem; 
   font-weight: 700;  
-  text-decoration: none;
   color: inherit; 
-  transition: color 0.2s ease;
-  &:hover {
-    color: #3b82f6; 
-  }
 `;
 const MemberTable = styled.div`
   display: flex;
@@ -150,14 +145,14 @@ const InfoMessage = styled.p`
 `;
 
 // --- 4. 목업 데이터 ---
-// memo -> description으로 수정
+// DTO에 맞게 'memo' 사용
 const mockTravelData = [
-  { id: 1, name: '태국 여행', description: '모임 설명 1' },
-  { id: 2, name: '중딩 친구들과 일본여행', description: '모임 설명 2' },
-  { id: 3, name: '3박 4일 싱가포르', description: '모임 설명 3' },
-  { id: 4, name: '제주도 2박 3일', description: '모임 설명 4' },
-  { id: 5, name: '부산 맛집 투어', description: '모임 설명 5' },
-  { id: 6, name: '강릉 당일치기', description: '모임 설명 6' },
+  { id: 1, name: '태국 여행', memo: '모임 설명 1' },
+  { id: 2, name: '중딩 친구들과 일본여행', memo: '모임 설명 2' },
+  { id: 3, name: '3박 4일 싱가포르', memo: '모임 설명 3' },
+  { id: 4, name: '제주도 2박 3일', memo: '모임 설명 4' },
+  { id: 5, name: '부산 맛집 투어', memo: '모임 설명 5' },
+  { id: 6, name: '강릉 당일치기', memo: '모임 설명 6' },
 ];
 
 const mockDetailData = { 
@@ -174,7 +169,7 @@ const mockDetailData = {
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId, onClose }) {
+function TripDetailModal({ tripId }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -186,8 +181,11 @@ function TripDetailModal({ tripId, onClose }) {
       setLoading(true);
       setError(null);
       try {
-        const accessToken = localStorage.getItem("authToken"); 
+        // --- ⬇️ 수정된 부분 ⬇️ ---
+        // 'authToken' -> 'accessToken'으로 수정
+        const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
+        // --- ⬆️ 수정된 부분 ⬆️ ---
 
         const response = await fetch(`/api/group/${tripId}/`, {
           headers: { 
@@ -225,11 +223,7 @@ function TripDetailModal({ tripId, onClose }) {
     <DetailWrapper>
       {error && <InfoMessage>{error} (임시 데이터가 표시됩니다.)</InfoMessage>}
 
-      <Title 
-        as={Link} 
-        to={`/group/${tripId}`} 
-        onClick={onClose}
-      >
+      <Title>
         {details.group.name}
       </Title>
       
@@ -285,22 +279,30 @@ function Groups() {
       setLoading(true);
       setInfoMessage('');
       try {
-        const response = await fetch('/api/groups', { // 수정함
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          throw new Error('로그인 정보가 없습니다.');
+        }
+
+        const response = await fetch('/api/groups', { 
+          headers: { 'Authorization': `Bearer ${accessToken}` }
         });
+        
         if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
         
-        const data = await response.json(); 
+        const responseData = await response.json(); 
         
-        if (data && data.length > 0) {
-          setAllTravelList(data);
+        if (responseData.code === "SU" && responseData.data && responseData.data.length > 0) {
+          setAllTravelList(responseData.data);
+        } else if (responseData.code === "SU" && responseData.data.length === 0) {
+          setInfoMessage('저장된 모임이 없습니다.');
+          setAllTravelList([]); 
         } else {
-          setInfoMessage('저장된 모임이 없습니다. 예시 데이터를 표시합니다.');
-          setAllTravelList(mockTravelData); 
+          throw new Error(responseData.message || "데이터를 불러오는데 실패했습니다.");
         }
       } catch (error) {
         console.error("모임 목록 로딩 실패:", error);
-        setInfoMessage('데이터를 받아오지 못했습니다. 예시 데이터를 표시합니다.');
+        setInfoMessage(error.message || '데이터를 받아오지 못했습니다. 예시 데이터를 표시합니다.');
         setAllTravelList(mockTravelData); 
       } finally {
         setLoading(false);
@@ -355,7 +357,7 @@ function Groups() {
             allTravelList.slice(0, visibleCount).map(travel => (
               <Link 
                 key={travel.id} 
-                to={`/group/${travel.id}`} // 수정
+                to={`/group/${travel.id}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <Card 
@@ -365,8 +367,11 @@ function Groups() {
                   <ImagePlaceholder>
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
+                  {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
+                  {/* 'memo'로 수정 */}
                   <h3>{travel.name}</h3>
-                  <p>{travel.description}</p>
+                  <p>{travel.memo}</p>
+                  {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
                 </Card>
               </Link>
             ))
