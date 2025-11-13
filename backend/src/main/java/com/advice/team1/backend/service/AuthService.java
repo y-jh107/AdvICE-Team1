@@ -59,8 +59,10 @@ public class AuthService {
         // }
 
         // 현재 User 엔티티에 외부 userId가 없으므로 임시로 내부 PK(id)를 subject로 사용
-        var subject = "u_" + u.getId();
-        Map<String, Object> tokens = jwt.issueTokens(subject);
+        String email = u.getEmail();
+        Long userId = u.getId();
+
+        Map<String, Object> tokens = jwt.issueTokens(email, userId);
 
         Map<String, Object> data = new HashMap<>(tokens);
         data.put("user", null); // 프론트에서 필요 없으면 null하면 될 거 같아요

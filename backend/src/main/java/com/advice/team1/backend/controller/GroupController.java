@@ -22,8 +22,8 @@ public class GroupController {
     // 모임 목록 조회 (내가 속한 모임들)
     @GetMapping
     public ApiResponse<List<GroupDto>> getGroups(
-            @RequestParam Long userId,
             @AuthenticationPrincipal CustomUserPrincipal user) {
+        Long userId = user.getId();
         List<GroupDto> groups = groupService.getGroupsByUserId(userId);
         return ApiResponse.success("모임 리스트 반환 성공", groups);
     }
