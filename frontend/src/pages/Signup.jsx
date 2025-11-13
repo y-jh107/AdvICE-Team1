@@ -85,6 +85,7 @@ const InfoText = styled.p`
 
 export default function Signup() {
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState(""); // 추가된 전화번호 상태
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agree1, setAgree1] = useState(false);
@@ -104,11 +105,19 @@ export default function Signup() {
       return;
     }
 
+    // 전화번호 (010-1234-5678)
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(phone)) {
+      alert("전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678");
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/v1/auth/sign-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        // phone 포함하여 서버로 전송
+        body: JSON.stringify({ name, phone, email, password }),
       });
       const data = await response.json();
 
@@ -136,6 +145,16 @@ export default function Signup() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+
+          {/* ✅ 추가된 전화번호 입력 필드 */}
+          <InputField
+            label="전화번호"
+            type="text"
+            placeholder="010-1234-5678 형식으로 입력하세요"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+
           <InputField
             label="아이디(이메일)"
             type="email"
@@ -143,6 +162,7 @@ export default function Signup() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
           <InputField
             label="비밀번호"
             type="password"
@@ -158,7 +178,7 @@ export default function Signup() {
                 checked={agree1}
                 onChange={(e) => setAgree1(e.target.checked)}
               />
-              이름, 이메일 등 개인정보 수집·이용에 동의합니다.
+              이름, 이메일, 전화번호 등 개인정보 수집·이용에 동의합니다.
             </label>
             <label>
               <input
@@ -166,7 +186,7 @@ export default function Signup() {
                 checked={agree2}
                 onChange={(e) => setAgree2(e.target.checked)}
               />
-              수집된 정보는 서비스 제공 및 회원 관리 목적으로 사용되며, 보관기간
+              수집된 정보는 서비스 제공 및 회원 관리 목적으로 사용되며 보관기간
               후 파기됩니다.
             </label>
             <label>
