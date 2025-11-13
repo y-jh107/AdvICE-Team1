@@ -27,7 +27,7 @@ public class AuthService {
      * 비밀번호 저장/검증은 난중에 Security 모듈 연동 시 처리
      */
     @Transactional
-    public void signUp(SignUpDto req) {
+    public User signUp(SignUpDto req) {
         if (users.existsByEmail(req.email())) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
@@ -41,6 +41,7 @@ public class AuthService {
 
         users.save(u);
 
+        return u;
         // Security 모듈이 준비되면 여기서 비밀번호 등록 로직 호출
     }
 

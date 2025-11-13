@@ -1,5 +1,6 @@
 package com.advice.team1.backend.controller;
 
+import com.advice.team1.backend.domain.entity.User;
 import com.advice.team1.backend.service.AuthService;
 import com.advice.team1.backend.common.response.ApiResponse;
 import com.advice.team1.backend.domain.dto.SignInDto;
@@ -19,10 +20,10 @@ public class AuthController {
     private final AuthService auth;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> signUp(@Validated @RequestBody SignUpDto req) {
-        auth.signUp(req);
+    public ResponseEntity<ApiResponse<User>> signUp(@Validated @RequestBody SignUpDto req) {
+        User u = auth.signUp(req);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>("SU", "회원가입 성공.", Map.of("id", null)));
+                .body(new ApiResponse<>("SU", "회원가입 성공.", u));
     }
 
     @PostMapping("/sign-in")

@@ -4,6 +4,7 @@ import InputField from "../components/InputField";
 import Button from "../components/Button";
 import signupImage from "../assets/signup-image.png";
 import { API_BASE_URL } from "../config";
+import {useNavigate} from "react-router-dom";
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -91,6 +92,7 @@ export default function Signup() {
   const [agree1, setAgree1] = useState(false);
   const [agree2, setAgree2] = useState(false);
   const [agree3, setAgree3] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,7 +129,7 @@ export default function Signup() {
       }
 
       alert("회원가입 성공");
-      window.location.href = "/login";
+      navigate("/login");
     } catch (err) {
       console.error(err);
       alert("서버와 연결할 수 없습니다.");
