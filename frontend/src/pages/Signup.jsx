@@ -85,7 +85,7 @@ const InfoText = styled.p`
 
 export default function Signup() {
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState(""); // ✅ 추가된 전화번호 상태
+  const [phone, setPhone] = useState(""); // 추가된 전화번호 상태
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agree1, setAgree1] = useState(false);
@@ -113,10 +113,10 @@ export default function Signup() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+      const response = await fetch(`${API_BASE_URL}/v1/auth/sign-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ phone 포함하여 서버로 전송
+        // phone 포함하여 서버로 전송
         body: JSON.stringify({ name, phone, email, password }),
       });
       const data = await response.json();
