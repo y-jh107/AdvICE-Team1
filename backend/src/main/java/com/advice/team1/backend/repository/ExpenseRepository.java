@@ -23,4 +23,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Object[]> expensesByDate(@Param("userId") Long userId,
                                   @Param("from")Instant from,
                                   @Param("to")Instant to);
+
+    List<Expense> findByGroup_IdOrderBySpentAtDesc(Long groupId);
 }
