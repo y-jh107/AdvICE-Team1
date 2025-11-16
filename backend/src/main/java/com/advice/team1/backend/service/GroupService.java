@@ -8,10 +8,15 @@ import com.advice.team1.backend.domain.entity.GroupMember;
 import com.advice.team1.backend.repository.GroupMemberRepository;
 import com.advice.team1.backend.repository.GroupRepository;
 import com.advice.team1.backend.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,23 +29,31 @@ public class GroupService {
     private final UserRepository users;
 
     @Transactional
-    public Group create(GroupRequestDto req) {
+    public Group create(GroupRequestDto req) throws IOException {
         if (req.name() == null || req.name().isBlank()) {
             throw new IllegalArgumentException("모임명은 필수입니다.");
         }
 
+        ObjectMapper mapper = new ObjectMapper();
+        List<GroupMemberRequestDto> members = Arrays.asList(
+                mapper.readValue(req.members(), GroupMemberRequestDto[].class)
+        );
+
+        LocalDate start = req.startDate();
+        LocalDate end = req.endDate();
+
         Group g = Group.builder()
                 .name(req.name())
                 .description(req.description())
-                .startDate(req.startDate())
-                .endDate(req.endDate())
-                .groupImage(req.groupImage())
+                .startDate(start)
+                .endDate(end)
+                .groupImage(req.groupImage().getBytes())
                 .build();
 
         Group saved = groups.save(g);
 
-        if (req.members() != null) {
-            for (GroupMemberRequestDto m : req.members()) {
+        if (!members.isEmpty()) {
+            for (GroupMemberRequestDto m : members) {
                 users.findByEmail(m.email()).ifPresent(u -> {
                     GroupMember gm = GroupMember.builder()
                             .group(saved)
@@ -55,9 +68,14 @@ public class GroupService {
     }
 
     @Transactional
-    public Group update(Long groupId, GroupRequestDto req) {
+    public Group update(Long groupId, GroupRequestDto req) throws JsonProcessingException {
         Group g = groups.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<GroupMemberRequestDto> members = Arrays.asList(
+                mapper.readValue(req.members(), GroupMemberRequestDto[].class)
+        );
 
         if (req.name() != null && !req.name().isBlank()) {
             g.changeName(req.name());
@@ -65,7 +83,7 @@ public class GroupService {
 
         if (req.members() != null) {
             g.getGroupMembers().clear();
-            for (GroupMemberRequestDto m : req.members()) {
+            for (GroupMemberRequestDto m : members) {
                 users.findByEmail(m.email()).ifPresent(u -> {
                     GroupMember gm = GroupMember.builder()
                             .group(g)
