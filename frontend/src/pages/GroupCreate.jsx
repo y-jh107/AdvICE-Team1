@@ -198,6 +198,7 @@ export default function GroupCreate() {
   const [endDate, setEndDate] = useState(null);
   const [description, setDescription] = useState("");
   const [descError, setDescError] = useState("");
+  const accessToken = localStorage.getItem("accessToken");
 
   // 설명 30자 제한
   useEffect(() => {
@@ -247,7 +248,7 @@ export default function GroupCreate() {
 
     // ✅ members → email + role만 포함해서 전송
     const membersData = [
-      { email: userEmail, role: "owner" },
+        ...(userEmail ? [{ email: userEmail, role: "owner" }] : []),
       ...members
         .filter((m) => m.email.trim())
         .map((m) => ({
@@ -259,14 +260,17 @@ export default function GroupCreate() {
     const formData = new FormData();
     formData.append("name", name);
     if (imageFile) formData.append("groupImage", imageFile);
-    formData.append("startDate", startDate.toISOString());
-    formData.append("endDate", endDate.toISOString());
+    formData.append("startDate", startDate.toISOString().split("T")[0]);
+    formData.append("endDate", endDate.toISOString().split("T")[0]);
     formData.append("description", description);
     formData.append("members", JSON.stringify(membersData));
 
     try {
       const response = await fetch(`${API_BASE_URL}/groups`, {
         method: "POST",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+        },
         body: formData,
       });
 
