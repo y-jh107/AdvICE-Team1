@@ -3,9 +3,9 @@ import styled from "styled-components";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
-import { API_BASE_URL } from "../config";
-import api from "../axios"; //axios 인스턴스 추가
-import {useNavigate} from "react-router-dom";
+import api from "../axios"; // axios 인스턴스
+import { useNavigate } from "react-router-dom";
+import jwtDecode from "jwt-decode"; // JWT 디코딩
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -23,7 +23,6 @@ const PageWrapper = styled.div`
   }
 `;
 
-// 왼쪽 이미지 영역
 const ImageSection = styled.div`
   flex: 1;
   display: flex;
@@ -44,7 +43,6 @@ const ImageSection = styled.div`
   }
 `;
 
-// 오른쪽 로그인 폼 영역
 const FormSection = styled.div`
   flex: 1;
   display: flex;
@@ -57,7 +55,6 @@ const FormSection = styled.div`
   }
 `;
 
-// 폼 자체 스타일
 const FormWrapper = styled.form`
   display: flex;
   flex-direction: column;
@@ -70,7 +67,6 @@ const FormWrapper = styled.form`
   }
 `;
 
-// 회원가입 링크
 const SignupText = styled.p`
   text-align: center;
   font-size: 0.9rem;
@@ -102,10 +98,16 @@ export default function Login() {
         password,
       });
 
-      const data = response.data;
+      const { accessToken, refreshToken } = response.data.data;
 
-      localStorage.setItem("accessToken", data.data.accessToken);
-      localStorage.setItem("refreshToken", data.data.refreshToken);
+      // 토큰 자체 저장
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      // JWT 디코딩 후 userId, email 저장
+      const decoded = jwtDecode(accessToken);
+      localStorage.setItem("userId", decoded.userId);
+      localStorage.setItem("email", decoded.email);
 
       alert("로그인 성공!");
       navigate("/groups");
