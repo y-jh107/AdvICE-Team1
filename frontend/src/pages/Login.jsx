@@ -5,7 +5,7 @@ import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
 import api from "../axios"; // axios 인스턴스
 import { useNavigate } from "react-router-dom";
-import jwtDecode from "jwt-decode"; // JWT 디코딩
+import { jwtDecode } from "jwt-decode"; // JWT 디코딩
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
@@ -107,7 +107,7 @@ export default function Login() {
       // JWT 디코딩 후 userId, email 저장
       const decoded = jwtDecode(accessToken);
       localStorage.setItem("userId", decoded.userId);
-      localStorage.setItem("email", decoded.email);
+      localStorage.setItem("email", decoded.sub);
 
       alert("로그인 성공!");
       navigate("/groups");
