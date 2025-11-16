@@ -34,4 +34,7 @@ public class Expense {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     private Group group;
+
+    @OneToOne(mappedBy = "expense", cascade = CascadeType.ALL)
+    private Receipt receipt;
 }
