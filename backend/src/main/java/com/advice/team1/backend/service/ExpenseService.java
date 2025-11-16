@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
+
 @Service
 @RequiredArgsConstructor
 public class ExpenseService {
@@ -28,6 +30,15 @@ public class ExpenseService {
             throw new IllegalArgumentException("해당 모임의 멤버만 지출을 등록할 수 있습니다.");
         }
 
+        Date spentAt = null;
+        if (req.spentDate() != null) {
+            spentAt = Date.from(
+                    req.spentDate()
+                            .atStartOfDay(java.time.ZoneId.systemDefault())
+                            .toInstant()
+            );
+        }
+
         Expense expense = Expense.builder()
                 .group(group)
                 .name(req.name())
@@ -35,7 +46,7 @@ public class ExpenseService {
                 .payment(req.payment())
                 .memo(req.memo())
                 .location(req.location())
-                .spentAt(req.spentAt())
+                .spentAt(spentAt)
                 .currency(req.currency())
                 .splitMode(req.splitMode())
                 .build();
