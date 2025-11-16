@@ -5,7 +5,7 @@ import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
 import api from "../axios"; // axios 인스턴스
 import { useNavigate } from "react-router-dom";
-import jwtDecode from "jwt-decode"; // JWT 디코딩
+import { jwtDecode } from "jwt-decode"; // JWT 디코딩
 
 // 전체 페이지 래퍼
 const PageWrapper = styled.div`
