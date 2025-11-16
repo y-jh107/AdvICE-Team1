@@ -26,7 +26,7 @@ public class Group {
     private LocalDate endDate;
 
     @Column(name = "group_image")
-    private String groupImage;
+    private byte[] groupImage;
 
     public void changeName(String name) {
         this.name = name;
