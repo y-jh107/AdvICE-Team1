@@ -4,6 +4,7 @@ import InputField from "../components/InputField";
 import Button from "../components/Button";
 import loginImage from "../assets/login-image.png";
 import { API_BASE_URL } from "../config";
+import api from "../axios"; //axios 인스턴스 추가
 import {useNavigate} from "react-router-dom";
 
 // 전체 페이지 래퍼
@@ -96,29 +97,21 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/auth/sign-in`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const response = await api.post("/v1/auth/sign-in", {
+        email,
+        password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        alert(data.message || "로그인 실패");
-        return;
-      }
-
-      alert("로그인 성공!");
-      // 예시: 토큰 로컬스토리지 저장
       localStorage.setItem("accessToken", data.data.accessToken);
       localStorage.setItem("refreshToken", data.data.refreshToken);
 
-      // 로그인 후 마이페이지 이동
+      alert("로그인 성공!");
       navigate("/groups");
     } catch (err) {
       console.error(err);
-      alert("서버와 연결할 수 없습니다.");
+      alert("로그인 실패");
     }
   };
 
