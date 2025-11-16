@@ -1,10 +1,9 @@
 // src/App.jsx
-
 import React from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import Home from "./pages/Home";
-import Trips from "./pages/Trips";
+import Groups from "./pages/Groups"; // ← 기존 Trips.jsx → Groups.jsx로 변경
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Mypage from "./pages/Mypage";
@@ -19,27 +18,34 @@ import Header from "./components/Header";
 import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
 
-// --- Header 조건부 렌더링을 위해 Wrapper 컴포넌트 생성 ---
 function AppWrapper() {
   const location = useLocation();
   const noHeaderPaths = ["/", "/login", "/signup"]; // Header 안 보일 경로
 
   return (
     <>
-      {/* 현재 경로가 noHeaderPaths에 없으면 Header 표시 */}
+      {/* Header는 로그인/회원가입/홈 제외하고 표시 */}
       {!noHeaderPaths.includes(location.pathname) && <Header />}
 
       <Routes>
+        {/* 기본 페이지 */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/mypage" element={<Mypage />} />
-        <Route path="/expenseredirect" element={<ExpenseRedirect />} />
-        <Route path="/expenseform" element={<ExpenseForm />} />
-        <Route path="/groupform" element={<GroupForm />} />
-        <Route path="/groupcreate" element={<GroupCreate />} />
+
+        {/* 모임 관련 */}
+        <Route path="/groups" element={<Groups />} /> {/* 모임 조회 */}
+        <Route path="/groupcreate" element={<GroupCreate />} /> {/* 모임 생성 */}
+
+        {/* 📝 추후 모임 수정 기능 추가 시 사용할 예정 */}
+        {/* <Route path="/groups/edit/:id" element={<GroupEdit />} /> */}
+
+        {/* 캘린더 및 지출 관련 */}
         <Route path="/calendar" element={<Calendar />} />
-        <Route path="/trips" element={<Trips />} />
+        <Route path="/expenseform" element={<ExpenseForm />} />
+        <Route path="/expenseredirect" element={<ExpenseRedirect />} />
+        <Route path="/groupform" element={<GroupForm />} />
       </Routes>
 
       <Footer />
@@ -47,7 +53,6 @@ function AppWrapper() {
   );
 }
 
-// --- App 컴포넌트 ---
 function App() {
   return (
     <BrowserRouter>
