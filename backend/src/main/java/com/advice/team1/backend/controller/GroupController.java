@@ -7,6 +7,7 @@ import com.advice.team1.backend.domain.dto.GroupRequestDto;
 import com.advice.team1.backend.domain.entity.Group;
 import com.advice.team1.backend.service.GroupService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +29,8 @@ public class GroupController {
         return ApiResponse.success("모임 리스트 반환 성공", groups);
     }
 
-    @PostMapping
-    public ApiResponse<Object> create(@RequestBody GroupRequestDto req) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Object> create(@ModelAttribute GroupRequestDto req) {
         Group g = groupService.create(req);
         return new ApiResponse<>("SU", "모임 생성 성공.", g.getName());
         // 프론트에서 data 안 쓰면 여기 null 넣어도 됨

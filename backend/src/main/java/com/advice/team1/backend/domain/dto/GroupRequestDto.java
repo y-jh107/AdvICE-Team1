@@ -1,11 +1,13 @@
 package com.advice.team1.backend.domain.dto;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public record GroupRequestDto(
         String name,
-        String groupImage,
+        MultipartFile groupImage,
         List<GroupMemberRequestDto> members,
         LocalDate startDate,
         LocalDate endDate,

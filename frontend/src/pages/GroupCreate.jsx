@@ -239,7 +239,7 @@ export default function GroupCreate() {
     if (startDate > endDate) return alert("가는 날은 오는 날보다 이전이어야 합니다.");
     if (description.length > 30) return;
 
-    const userEmail = localStorage.getItem("userEmail");
+    const userEmail = localStorage.getItem("email");
     if (!userEmail) {
       alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
       return;
@@ -278,7 +278,7 @@ export default function GroupCreate() {
       }
 
       alert("모임 생성 성공!");
-      navigate("/trips", { state: { newTrip: data.data } });
+      navigate("/groups", { state: { newTrip: data.data } });
     } catch (err) {
       console.error(err);
       alert("서버와 연결할 수 없습니다.");
