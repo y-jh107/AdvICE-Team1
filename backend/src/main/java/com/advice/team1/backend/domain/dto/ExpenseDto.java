@@ -1,8 +1,6 @@
 package com.advice.team1.backend.domain.dto;
 
 import com.advice.team1.backend.domain.entity.Expense;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +11,6 @@ import java.util.Date;
 @Data
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ExpenseDto {
     private Long id;
     private String name;

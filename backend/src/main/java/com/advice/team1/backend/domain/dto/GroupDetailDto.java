@@ -9,7 +9,7 @@ public record GroupDetailDto(
         String description,
         LocalDate startDate,
         LocalDate endDate,
-        String groupImage,
+        byte[] groupImage,
         List<GroupMemberSimpleDto> members,
         List<GroupExpenseItemDto> expenses
 ) {}
