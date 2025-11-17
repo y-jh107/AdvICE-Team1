@@ -77,9 +77,14 @@ export default function GroupForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
-      navigate("/GroupCreate", { state: { name } });
+
+    if (!name.trim()) {
+      alert("여행명을 입력해주세요.");
+      return;
     }
+
+    // 🔥라우트 정확히 명시
+    navigate("/groups/create", { state: { name } });
   };
 
   return (
@@ -98,7 +103,7 @@ export default function GroupForm() {
             onChange={(e) => setName(e.target.value)}
             required
           />
-          <Button text="추가하기" type="submit" />
+          <Button text="추가하기" type="submit" variant="primary" />
         </FormWrapper>
       </FormSection>
     </PageWrapper>

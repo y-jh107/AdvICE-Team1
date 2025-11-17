@@ -8,7 +8,7 @@ import InputField from "../components/InputField";
 import Button from "../components/Button";
 import { API_BASE_URL } from "../config";
 
-// === 스타일 컴포넌트 ===
+// === 스타일 ===
 const PageWrapper = styled.div`
   display: flex;
   align-items: flex-start;
@@ -100,10 +100,9 @@ const Section = styled.div`
 
 const SectionTitle = styled.h3`
   font-size: 1.05rem;
-  margin: 0 0 0.5rem 0;
+  margin-bottom: 0.5rem;
   color: #444;
   font-weight: normal;
-  text-align: left;
 `;
 
 const MemberRow = styled.div`
@@ -168,7 +167,6 @@ const Textarea = styled.textarea`
   border-radius: 8px;
   resize: none;
   font-size: 0.9375rem;
-  font-family: inherit;
 `;
 
 const CharCount = styled.div`
@@ -188,9 +186,7 @@ export default function GroupCreate() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  const initialName = state?.name || "";
-
-  const [name, setName] = useState(initialName);
+  const [name, setName] = useState(state?.name || "");
   const [groupImage, setGroupImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [members, setMembers] = useState([{ name: "", email: "" }]);
@@ -199,13 +195,13 @@ export default function GroupCreate() {
   const [description, setDescription] = useState("");
   const [descError, setDescError] = useState("");
 
+  const accessToken = localStorage.getItem("accessToken");
+  const userEmail = localStorage.getItem("email");
+
   // 설명 30자 제한
   useEffect(() => {
-    if (description.length > 30) {
-      setDescError("모임 설명은 30자 이내로 입력해주세요.");
-    } else {
-      setDescError("");
-    }
+    if (description.length > 30) setDescError("모임 설명은 30자 이내로 입력해주세요.");
+    else setDescError("");
   }, [description]);
 
   // 이미지 업로드
@@ -219,8 +215,8 @@ export default function GroupCreate() {
     }
   };
 
-  // 여행원 관리
-  const addMember = () => setMembers([...members, { name: "", email: "" }]);
+  const addMember = () =>
+    setMembers([...members, { name: "", email: "" }]);
 
   const handleMemberChange = (index, field, value) => {
     const updated = [...members];
@@ -228,24 +224,21 @@ export default function GroupCreate() {
     setMembers(updated);
   };
 
-  const removeMember = (index) => {
+  const removeMember = (index) =>
     setMembers(members.filter((_, i) => i !== index));
-  };
 
   // 제출
   const handleSubmit = async () => {
     if (!name.trim()) return alert("여행명을 입력하세요.");
     if (!startDate || !endDate) return alert("여행 기간을 선택하세요.");
     if (startDate > endDate) return alert("가는 날은 오는 날보다 이전이어야 합니다.");
-    if (description.length > 30) return;
 
-    const userEmail = localStorage.getItem("userEmail");
     if (!userEmail) {
       alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
       return;
     }
 
-    // ✅ members → email + role만 포함해서 전송
+    // members 데이터 구성
     const membersData = [
       { email: userEmail, role: "owner" },
       ...members
@@ -259,14 +252,17 @@ export default function GroupCreate() {
     const formData = new FormData();
     formData.append("name", name);
     if (imageFile) formData.append("groupImage", imageFile);
-    formData.append("startDate", startDate.toISOString());
-    formData.append("endDate", endDate.toISOString());
+    formData.append("startDate", startDate.toISOString().split("T")[0]);
+    formData.append("endDate", endDate.toISOString().split("T")[0]);
     formData.append("description", description);
     formData.append("members", JSON.stringify(membersData));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/groups`, {
+      const response = await fetch(`${API_BASE_URL}/v1/groups`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: formData,
       });
 
@@ -278,7 +274,7 @@ export default function GroupCreate() {
       }
 
       alert("모임 생성 성공!");
-      navigate("/trips", { state: { newTrip: data.data } });
+      navigate("/groups", { state: { newTrip: data.data } });
     } catch (err) {
       console.error(err);
       alert("서버와 연결할 수 없습니다.");
@@ -290,18 +286,20 @@ export default function GroupCreate() {
       <LeftSection>
         <ImageUploadWrapper>
           {groupImage ? (
-            <ImagePreview src={groupImage} alt="여행 대표 이미지" />
+            <ImagePreview src={groupImage} />
           ) : (
             <Placeholder>
               <PlaceholderText>G</PlaceholderText>
             </Placeholder>
           )}
+
           <HiddenInput
             type="file"
             accept="image/*"
-            onChange={handleImageChange}
             id="group-image-upload"
+            onChange={handleImageChange}
           />
+
           <UploadLabel htmlFor="group-image-upload">추가하기</UploadLabel>
         </ImageUploadWrapper>
       </LeftSection>
@@ -338,7 +336,7 @@ export default function GroupCreate() {
                 }
               />
               {members.length > 1 && (
-                <RemoveButton type="button" onClick={() => removeMember(index)}>
+                <RemoveButton onClick={() => removeMember(index)}>
                   삭제
                 </RemoveButton>
               )}
@@ -349,33 +347,28 @@ export default function GroupCreate() {
 
         <Section>
           <SectionTitle>여행 기간</SectionTitle>
+
           <DateRow>
             <DateInputWrapper>
               <DatePicker
                 selected={startDate}
                 onChange={(date) => setStartDate(date)}
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
                 dateFormat="yyyy-MM-dd"
                 locale={ko}
                 placeholderText="가는 날"
-                customInput={<input />}
               />
             </DateInputWrapper>
+
             <DateSeparator>~</DateSeparator>
+
             <DateInputWrapper>
               <DatePicker
                 selected={endDate}
                 onChange={(date) => setEndDate(date)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                minDate={startDate}
                 dateFormat="yyyy-MM-dd"
                 locale={ko}
                 placeholderText="오는 날"
-                customInput={<input />}
+                minDate={startDate}
               />
             </DateInputWrapper>
           </DateRow>
@@ -383,12 +376,14 @@ export default function GroupCreate() {
 
         <Section>
           <SectionTitle>모임 설명</SectionTitle>
+
           <Textarea
             placeholder="30자 이내로 입력"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={31}
           />
+
           <CharCount>
             {description.length}/30
             {descError && <ErrorText>{descError}</ErrorText>}

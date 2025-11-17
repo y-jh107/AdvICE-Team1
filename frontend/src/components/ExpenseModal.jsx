@@ -1,103 +1,90 @@
+// src/components/ExpenseModal.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "./Button";
 import InputField from "./InputField";
 import ReceiptModal from "./ReceiptModal";
+import { jwtDecode } from "jwt-decode";
 
-export default function ExpenseModal({ onClose, onSuccess, members: propMembers = [] }) {
-  const members = propMembers.length > 0 ? propMembers : [
-    { userId: 1, name: "홍길동" },
-    { userId: 2, name: "김철수" },
-    { userId: 3, name: "이영희" },
-  ];
+export default function ExpenseModal({ groupId, onClose, onSuccess }) {
+  const token = localStorage.getItem("token");
+  const user = token ? jwtDecode(token) : null;
 
+  const [members, setMembers] = useState([]);
   const [name, setName] = useState("");
   const [spentAt, setSpentAt] = useState("");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("KRW");
   const [location, setLocation] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card"); // 결제 수단
   const [selectedMembers, setSelectedMembers] = useState({});
   const [equalShare, setEqualShare] = useState(false);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
 
-  // 멤버 초기화
-  useEffect(() => {
-    const initial = {};
-    members.forEach((m) => {
-      initial[String(m.userId)] = { selected: false, percent: 0 };
+  // 그룹 멤버 불러오기
+  const fetchGroupMembers = async () => {
+    const res = await fetch(`http://localhost:8080/groups/${groupId}/members`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    setSelectedMembers(initial);
+    const data = await res.json();
+    setMembers(data);
+  };
+
+  useEffect(() => {
+    fetchGroupMembers();
+  }, []);
+
+  useEffect(() => {
+    const obj = {};
+    members.forEach((m) => {
+      obj[m.userId] = { selected: false, percent: 0 };
+    });
+    setSelectedMembers(obj);
   }, [members]);
 
-  const handleMemberChange = (userId, checked) => {
-    const id = String(userId);
-    setSelectedMembers(prev => {
-      const updated = { ...prev, [id]: { ...prev[id], selected: checked } };
-      return equalShare ? applyEqualShare(updated) : updated;
-    });
+  const handleMemberChange = (id, checked) => {
+    const copy = { ...selectedMembers };
+    copy[id].selected = checked;
+    setSelectedMembers(copy);
   };
 
-  const handlePercentChange = (userId, value) => {
-    const id = String(userId);
-    const num = Number(value);
-    setSelectedMembers(prev => ({ ...prev, [id]: { ...prev[id], percent: num } }));
-  };
-
-  const applyEqualShare = (membersState) => {
-    const updated = { ...membersState };
-    const active = Object.values(updated).filter(m => m.selected);
-    if (active.length === 0) return updated;
-    const equalPercent = Math.floor(100 / active.length);
-    let remaining = 100 - equalPercent * active.length;
-    Object.entries(updated).forEach(([id, m]) => {
-      if (m.selected) {
-        updated[id].percent = equalPercent + (remaining > 0 ? 1 : 0);
-        remaining = Math.max(0, remaining - 1);
-      } else {
-        updated[id].percent = 0;
-      }
-    });
-    setSelectedMembers(updated);
-    return updated;
-  };
-
-  const handleEqualShareToggle = (checked) => {
-    setEqualShare(checked);
-    if (checked) applyEqualShare(selectedMembers);
-  };
-
-  const validatePercentSum = () => {
+  const validatePercent = () => {
     const sum = Object.values(selectedMembers)
-      .filter(m => m.selected)
-      .reduce((acc, m) => acc + m.percent, 0);
+      .filter((m) => m.selected)
+      .reduce((acc, curr) => acc + curr.percent, 0);
+
     return sum === 100;
   };
 
-  const handleSave = () => {
-    if (!name) { alert("지출명을 입력하세요."); return; }
-    if (!spentAt) { alert("날짜를 선택하세요."); return; }
-    if (!amount || Number(amount) <= 0) { alert("금액을 입력하세요."); return; }
+  const handleSave = async () => {
+    if (!name || !spentAt || !amount) {
+      alert("모든 값을 입력하세요.");
+      return;
+    }
+    if (!validatePercent()) {
+      alert("참여자 비율 합계는 100이어야 합니다.");
+      return;
+    }
 
-    const activeMembers = Object.entries(selectedMembers)
+    const participants = Object.entries(selectedMembers)
       .filter(([_, m]) => m.selected)
       .map(([id, m]) => ({ userId: Number(id), percent: m.percent }));
 
-    if (activeMembers.length === 0) { alert("참여자가 없습니다."); return; }
-    if (!validatePercentSum()) { alert("참여자 비율 합계는 반드시 100이어야 합니다."); return; }
-
     const newExpense = {
-      id: Date.now(),
-      date: spentAt,
       name,
+      date: spentAt,
       totalAmount: Number(amount),
       location,
-      currency,
-      paymentMethod,
-      participants: activeMembers,
+      participants,
     };
 
-    onSuccess(newExpense);
+    await fetch(`http://localhost:8080/groups/${groupId}/expenses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newExpense),
+    });
+
+    onSuccess();
     onClose();
   };
 
@@ -106,29 +93,16 @@ export default function ExpenseModal({ onClose, onSuccess, members: propMembers 
       <Modal>
         <HeaderRow>
           <h3>지출 추가</h3>
-          <CloseBtn onClick={onClose}>✕</CloseBtn>
+          <Close onClick={onClose}>✕</Close>
         </HeaderRow>
 
         <Content>
           <InputField label="지출명" value={name} onChange={(e) => setName(e.target.value)} />
           <InputField label="날짜" type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
-          <InputField label="금액" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="numeric" />
-          
-          <Label>통화</Label>
-          <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-            <option value="KRW">원화</option>
-            <option value="USD">달러</option>
-          </Select>
-
+          <InputField label="총 금액" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <InputField label="장소" value={location} onChange={(e) => setLocation(e.target.value)} />
 
-          <Label>결제 수단</Label>
-          <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-            <option value="card">카드</option>
-            <option value="cash">현금</option>
-          </Select>
-
-          <Label>참여자 선택</Label>
+          <h4>참여자</h4>
           {members.map((m) => (
             <MemberRow key={m.userId}>
               <input
@@ -142,60 +116,51 @@ export default function ExpenseModal({ onClose, onSuccess, members: propMembers 
                 min={0}
                 max={100}
                 value={selectedMembers[m.userId]?.percent || 0}
-                onChange={(e) => handlePercentChange(m.userId, e.target.value)}
+                onChange={(e) =>
+                  setSelectedMembers({
+                    ...selectedMembers,
+                    [m.userId]: { ...selectedMembers[m.userId], percent: Number(e.target.value) },
+                  })
+                }
               />
-              <span>%</span>
+              %
             </MemberRow>
           ))}
 
-          <EqualShareRow>
-            <input type="checkbox" checked={equalShare} onChange={(e) => handleEqualShareToggle(e.target.checked)} />
-            <span>선택한 멤버에게 균등 분배</span>
-          </EqualShareRow>
-
           <ButtonRow>
             <Button text="저장" onClick={handleSave} />
-            <Button text="영수증 첨부" onClick={() => setShowReceiptModal(true)} />
           </ButtonRow>
         </Content>
       </Modal>
-
-      {showReceiptModal && <ReceiptModal onClose={() => setShowReceiptModal(false)} />}
     </Overlay>
   );
 }
 
-// Styled Components
+// Styled Components -------------------------------------
 const Overlay = styled.div`
-  position: fixed; top: 0; left: 0;
-  width: 100%; height: 100%;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3);
   display: flex; justify-content: center; align-items: center;
-  background: rgba(0,0,0,0.3); z-index: 999;
+  z-index: 999;
 `;
 const Modal = styled.div`
-  width: 500px; background: white; border-radius: 15px; padding: 1.5rem;
+  width: 500px; background: white; border-radius: 15px;
+  padding: 1.5rem;
 `;
 const HeaderRow = styled.div`
-  display: flex; justify-content: space-between; margin-bottom: 1rem;
+  display: flex; justify-content: space-between;
 `;
-const CloseBtn = styled.div`
-  cursor: pointer; font-size: 1.2rem;
+const Close = styled.div`
+  cursor: pointer; font-size: 1.3rem;
 `;
 const Content = styled.div`
-  display: flex; flex-direction: column; gap: 1rem;
-`;
-const Label = styled.div`font-weight: bold;`;
-const Select = styled.select`
-  border: 1px solid #ccc; padding: 0.6rem; border-radius: 6px;
+  margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;
 `;
 const MemberRow = styled.div`
   display: flex; align-items: center; gap: 0.5rem;
 `;
 const PercentInput = styled.input`
-  width: 60px; padding: 0.3rem; border-radius: 4px; border: 1px solid #ccc;
-`;
-const EqualShareRow = styled.div`
-  display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;
+  width: 60px; padding: 0.3rem;
 `;
 const ButtonRow = styled.div`
   display: flex; gap: 1rem; margin-top: 1rem;
