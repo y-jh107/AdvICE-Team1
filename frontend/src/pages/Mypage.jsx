@@ -8,27 +8,10 @@ import Button from "../components/Button"; // 공용 버튼 컴포넌트
 import Header from "../components/Header"; // 공용 Header 컴포넌트
 import calendarIcon from "../assets/calendar-icon.png"; // 캘린더 아이콘 이미지 경로 (준비 필요)
 
-// --- Mock Data (나중에 실제 데이터로 교체) ---
-const dummyUser = {
-  name: "어드바이스",
-  email: "12345@gmail.com",
-  phone: "010-1111-1111",
-};
-
-const dummyExpenses = [
-  { date: "2025-09-10", amount: 15800 },
-  { date: "2025-09-11", amount: 23400 },
-  { date: "2025-09-12", amount: 37900 },
-  { date: "2025-09-13", amount: 50000 },
-  { date: "2025-09-14", amount: 40000 },
-];
-
-const dummyTrips = [
-  { groupId: "g_001", name: "홍콩 여행" },
-  { groupId: "g_023", name: "2학기 회식" },
-  { groupId: "g_024", name: "3박 4일 싱가포르 여행" },
-  { groupId: "g_025", name: "중국 여행" },
-];
+// --- Mock Data (제거됨) ---
+// const dummyUser = { ... }; // 제거됨
+// const dummyExpenses = [ ... ]; // 제거됨
+// const dummyTrips = [ ... ]; // 제거됨
 
 // --- Styled Components ---
 
@@ -148,10 +131,10 @@ const ListCard = styled(Card)`
 
 // --- Mypage Component ---
 function Mypage() {
-  //  Mock 데이터를 컴포넌트의 '기본 state'로 설정합니다.
-  const [user, setUser] = useState(dummyUser);
-  const [expenses, setExpenses] = useState(dummyExpenses);
-  const [trips, setTrips] = useState(dummyTrips);
+  //  Mock 데이터 대신 null 과 빈 배열( [] )로 state를 초기화합니다.
+  const [user, setUser] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [trips, setTrips] = useState([]);
   const [error, setError] = useState(null); // 에러 상태 관리를 위함
 
   //  컴포넌트가 처음 렌더링될 때(Mount) 백엔드에서 데이터를 가져옵니다.
@@ -161,7 +144,7 @@ function Mypage() {
       try {
         // 인증 토큰과 userId 가져오기
         const accessToken = localStorage.getItem("accessToken");
-        const userId = localStorage.getItem("userId"); 
+        const userId = localStorage.getItem("userId");
 
         // (방어 코드) 인증 정보가 없으면 API를 호출하지 않음
         if (!accessToken || !userId) {
@@ -199,25 +182,26 @@ function Mypage() {
         // 네트워크 에러 또는 위에서 throw된 에러
         console.error("데이터 페칭 실패:", err);
         setError(err);
-        // !! 중요: 실패 시 state를 업데이트하지 않으므로,
-        // 컴포넌트는 초기값(dummyUser, dummyExpenses 등)을 계속 보여줍니다.
+        // !! 중요: 실패 시 state가 업데이트되지 않으므로,
+        // 컴포넌트는 초기값(null, [])을 계속 보여줍니다.
       }
     };
 
     fetchMyPageData(); // 위에서 선언한 함수 실행
   }, []); // 빈 배열(dependency array): 컴포넌트가 처음 마운트될 때 1회만 실행
 
-// Header에 전달할 사용자 이름 (state에서 가져옴)
+  // Header에 전달할 사용자 이름 (state에서 가져옴)
   const userDisplayName = user?.name;
 
   return (
     <PageWrapper>
+      {/* <Header userName={userDisplayName} /> */} {/* Header 컴포넌트가 있다면 주석 해제 */}
       <MainContent>
         {/* 에러가 발생했다면 사용자에게 알림 */}
         {error && (
           <div style={{ color: "red", textAlign: "center", marginBottom: "1rem" }}>
-            {/*  에러 객체의 'message'를 표시 */}
-            데이터 로딩 실패: {error.message} (임시 데이터가 표시됩니다.)
+            {/* 에러 객체의 'message'를 표시 (임시 데이터 관련 문구 제거) */}
+            데이터 로딩 실패: {error.message}
           </div>
         )}
 
@@ -226,6 +210,10 @@ function Mypage() {
           <ProfileInfo>
             <InfoField>
               <label>이름</label>
+              {/*
+                user가 null일 수 있으므로 optional chaining (?.) 사용
+                데이터가 로드되기 전이나 실패 시 빈 값으로 표시됨
+              */}
               <p>{user?.name}</p>
             </InfoField>
             <InfoField>
@@ -251,11 +239,8 @@ function Mypage() {
           <ListCard>
             <h3>일일 내 지출액</h3>
             <ul>
-              {/*  'expenses' state를 순회 */}
+              {/* 'expenses' state를 순회 (초기값 [] 이므로 map 사용 가능) */}
               {expenses?.map((item) => (
-                //  key를 id 대신 'date'로 사용 (명세서에 id가 없음)
-                //      (만약 date가 중복될 수 있다면 백엔드에 고유 id 요청 필요)
-                //  amount가 숫자(Number)이므로, toLocaleString()으로 원화 포맷팅
                 <li key={item.date}>
                   {item.date}: {item.amount.toLocaleString('ko-KR')}원
                 </li>
@@ -266,9 +251,8 @@ function Mypage() {
           <ListCard>
             <h3>내 여행 목록</h3>
             <ul>
-              {/*  'trips' state를 순회 */}
+              {/* 'trips' state를 순회 (초기값 [] 이므로 map 사용 가능) */}
               {trips?.map((item) => (
-                //  key를 명세서에 맞게 'item.groupId'로 변경
                 <li key={item.groupId}>{item.name}</li>
               ))}
             </ul>
