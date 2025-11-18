@@ -58,8 +58,6 @@ public class FxService {
                 + "&searchdate=" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 + "&data=AP01";
 
-        System.out.println("CALL URL = " + url);
-
         FxDto[] response = restTemplate.getForObject(url, FxDto[].class);
 
         if (response == null) return List.of();
