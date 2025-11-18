@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import Button from '../components/Button'; 
+import Button from '../components/Button';
 import { Link } from 'react-router-dom';
-import {API_BASE_URL} from "../config.js";
+import { API_BASE_URL } from "../config.js";
 
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
@@ -167,9 +167,9 @@ function TripDetailModal({ tripId }) {
         const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
             method: "GET",
             headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          }
+              'Authorization': `Bearer ${accessToken}`,
+              'Accept': 'application/json'
+            }
         });
 
         if (!response.ok) throw new Error(`HTTP 에러: ${response.status}`);
@@ -333,7 +333,9 @@ function Groups() {
             allTravelList.slice(0, visibleCount).map(travel => (
               <Link 
                 key={travel.id} 
-                to={`/group/${travel.id}`}
+                // --- ⬇️ 수정된 부분 ⬇️ ---
+                to={`/group/${travel.id}/expense`} 
+                // --- ⬆️ 수정된 부분 ⬆️ ---
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <Card 
@@ -343,10 +345,8 @@ function Groups() {
                   <ImagePlaceholder>
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
-                  {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
                   <h3>{travel.name}</h3>
                   <p>{travel.description}</p>
-                  {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
                 </Card>
               </Link>
             ))
