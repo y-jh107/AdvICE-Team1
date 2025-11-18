@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -35,22 +36,36 @@ public class FxService {
             return cached;
         }
 
-        String url = fxProperties.getUrl()
-                + "?authkey=" + fxProperties.getApiKey()
-                + "&data=AP01";
+        List<FxDto> fxRates = callApi(today);
 
-        FxDto[] response = restTemplate.getForObject(url, FxDto[].class);
+        boolean invalid = fxRates.stream()
+                .anyMatch(dto -> dto.getCurrency() == null);
 
-        if (response == null || response.length == 0) {
-            throw new IllegalStateException("환율을 불러올 수 없습니다.");
+        if (invalid) {
+            LocalDate previous = today.minusDays(1);
+            fxRates = callApi(previous);
         }
-
-        List<FxDto> fxRates = Arrays.stream(response)
-                .filter(dto -> TARGET_CURRENCIES.contains(dto.getCurrency()))
-                .collect(Collectors.toList());
 
         fxCache.put(today, fxRates);
 
         return fxRates;
+    }
+
+    public List<FxDto> callApi(LocalDate date) {
+
+        String url = fxProperties.getUrl()
+                + "?authkey=" + fxProperties.getApiKey()
+                + "&searchdate=" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "&data=AP01";
+
+        System.out.println("CALL URL = " + url);
+
+        FxDto[] response = restTemplate.getForObject(url, FxDto[].class);
+
+        if (response == null) return List.of();
+
+        return Arrays.stream(response)
+                .filter(dto -> TARGET_CURRENCIES.contains(dto.getCurrency()))
+                .collect(Collectors.toList());
     }
 }
