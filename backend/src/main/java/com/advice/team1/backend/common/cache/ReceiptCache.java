@@ -1,4 +1,4 @@
-package com.advice.team1.backend.common.application;
+package com.advice.team1.backend.common.cache;
 
 import com.advice.team1.backend.domain.entity.Receipt;
 import org.springframework.stereotype.Component;

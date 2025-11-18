@@ -1,6 +1,6 @@
 package com.advice.team1.backend.controller;
 
-import com.advice.team1.backend.common.application.ReceiptCache;
+import com.advice.team1.backend.common.cache.ReceiptCache;
 import com.advice.team1.backend.common.response.ApiResponse;
 import com.advice.team1.backend.common.security.CustomUserPrincipal;
 import com.advice.team1.backend.domain.dto.ExpenseDetailDto;
