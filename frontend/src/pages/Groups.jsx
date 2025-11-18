@@ -146,26 +146,7 @@ const InfoMessage = styled.p`
 `;
 
 // --- 4. 목업 데이터 ---
-// DTO에 맞게 'memo' 사용
-const mockTravelData = [
-  { id: 1, name: '태국 여행', memo: '모임 설명 1' },
-  { id: 2, name: '중딩 친구들과 일본여행', memo: '모임 설명 2' },
-  { id: 3, name: '3박 4일 싱가포르', memo: '모임 설명 3' },
-  { id: 4, name: '제주도 2박 3일', memo: '모임 설명 4' },
-  { id: 5, name: '부산 맛집 투어', memo: '모임 설명 5' },
-  { id: 6, name: '강릉 당일치기', memo: '모임 설명 6' },
-];
-
-const mockDetailData = { 
-  group: { name: '태국 여행 (임시)' },
-  owner: { name: '장주연', email: 'jang@gmail.com', totalSpend: 200000 },
-  members: [
-    { id: 101, name: '변영빈', userId: 'bgun_id', totalSpend: 50000 },
-    { id: 102, name: '양진혁', userId: 'yjh_id', totalSpend: 75000 },
-    { id: 103, name: '유승열', userId: 'ysy_id', totalSpend: 25000 },
-  ],
-  expenses: []
-};
+// ⭐️ 목업 데이터 (mockTravelData, mockDetailData) 제거됨
 
 const ITEMS_PER_LOAD = 3;
 
@@ -181,14 +162,16 @@ function TripDetailModal({ tripId }) {
     async function fetchTripDetails() {
       setLoading(true);
       setError(null);
+      setDetails(null); // ⭐️ tripId가 변경될 때 이전 데이터를 지웁니다.
       try {
-        // --- ⬇️ 수정된 부분 ⬇️ ---
-        // 'authToken' -> 'accessToken'으로 수정
         const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
-        // --- ⬆️ 수정된 부분 ⬆️ ---
 
-        const response = await fetch(`${API_BASE_URL}/groups`, {
+        // ⭐️ 모달에서는 특정 group의 상세 정보를 가져와야 합니다.
+        // ⭐️ API 엔드포인트를 /groups/${tripId} 로 변경해야 할 수 있습니다.
+        // ⭐️ 현재 코드는 /groups (목록)을 호출하고 있어, API 스펙 확인이 필요합니다.
+        // ⭐️ 여기서는 /groups/${tripId} 를 호출한다고 가정하고 수정합니다.
+        const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { // ⭐️ 엔드포인트 수정
             method: "GET",
             headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -209,7 +192,7 @@ function TripDetailModal({ tripId }) {
       } catch (err) {
         console.error("모달 데이터 로딩 실패:", err);
         setError(err.message);
-        setDetails(mockDetailData);
+        // ⭐️ setDetails(mockDetailData) 제거
       } finally {
         setLoading(false);
       }
@@ -218,13 +201,17 @@ function TripDetailModal({ tripId }) {
     fetchTripDetails();
   }, [tripId]); 
 
+  // --- ⬇️ 수정된 부분 (렌더링 로직) ⬇️ ---
   if (loading) return <DetailWrapper><p>상세 정보를 불러오는 중...</p></DetailWrapper>;
+  if (error) return <DetailWrapper><InfoMessage>{error}</InfoMessage></DetailWrapper>;
   if (!details) return <DetailWrapper><p>데이터가 없습니다.</p></DetailWrapper>;
+  // --- ⬆️ 수정된 부분 ⬆️ ---
 
   return (
     <DetailWrapper>
-      {error && <InfoMessage>{error} (임시 데이터가 표시됩니다.)</InfoMessage>}
-
+      {/* 에러는 위에서 이미 처리되었으므로, 
+        여기서는 details가 확실히 존재할 때만 렌더링됩니다.
+      */}
       <Title>
         {details.group.name}
       </Title>
@@ -286,7 +273,8 @@ function Groups() {
           throw new Error('로그인 정보가 없습니다.');
         }
 
-        const response = await fetch('/api/groups', { 
+        // ⭐️ API_BASE_URL을 사용하도록 수정합니다.
+        const response = await fetch(`${API_BASE_URL}/groups`, { 
           headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         
@@ -304,8 +292,10 @@ function Groups() {
         }
       } catch (error) {
         console.error("모임 목록 로딩 실패:", error);
-        setInfoMessage(error.message || '데이터를 받아오지 못했습니다. 예시 데이터를 표시합니다.');
-        setAllTravelList(mockTravelData); 
+        // --- ⬇️ 수정된 부분 ⬇️ ---
+        setInfoMessage(error.message || '데이터를 받아오지 못했습니다.');
+        setAllTravelList([]); // ⭐️ mockData 대신 빈 배열 설정
+        // --- ⬆️ 수정된 부분 ⬆️ ---
       } finally {
         setLoading(false);
       }
@@ -369,11 +359,8 @@ function Groups() {
                   <ImagePlaceholder>
                     <span>(이미지 영역)</span>
                   </ImagePlaceholder>
-                  {/* --- ⬇️ 수정된 부분 ⬇️ --- */}
-                  {/* 'memo'로 수정 */}
                   <h3>{travel.name}</h3>
                   <p>{travel.memo}</p>
-                  {/* --- ⬆️ 수정된 부분 ⬆️ --- */}
                 </Card>
               </Link>
             ))
