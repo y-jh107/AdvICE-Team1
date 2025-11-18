@@ -39,7 +39,7 @@ function AppWrapper() {
 
 
         <Route path="/calendar" element={<Calendar />} />
-        <Route path="/expenseform" element={<ExpenseForm />} />
+        <Route path="//group/:id/expense" element={<ExpenseForm />} />
         <Route path="/expenseredirect" element={<ExpenseRedirect />} />
         <Route path="/groupform" element={<GroupForm />} />
       </Routes>
