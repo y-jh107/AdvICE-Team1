@@ -1,7 +1,5 @@
-// src/components/ExpenseModal.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import InputField from "./InputField";
 import Button from "./Button";
 import { API_BASE_URL } from "../config";
 
@@ -18,9 +16,8 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // 초기 멤버 구성
+  // 초기 멤버 셋업
   useEffect(() => {
-    // 백엔드에서 데이터 안 받아졌을 때 테스트용 더미
     const initialMembers = members.length
       ? members
       : [
@@ -36,7 +33,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers(obj);
   }, [members]);
 
-  // 체크 박스 토글
   const toggleMember = (id, checked) => {
     setSelectedMembers((prev) => ({
       ...prev,
@@ -111,7 +107,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/v1/groups/${groupId}/expenses`, {
+      const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -126,7 +122,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         return;
       }
 
-      onSuccess?.();
+      onSuccess?.(); // 서버에서 계산된 myAmount 포함 새 데이터 불러오기
       onClose();
     } catch (err) {
       alert("서버 요청 실패");
@@ -134,149 +130,104 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   };
 
   return (
-    <Overlay>
-      <Box>
-        <Header>
-          <h3>지출 추가</h3>
-          <Close onClick={onClose}>✕</Close>
-        </Header>
+    <ModalOverlay onClick={onClose}>
+      <ModalContent onClick={(e) => e.stopPropagation()}>
+        <ModalHeader>
+          <span>지출 추가</span>
+          <button onClick={onClose}>&times;</button>
+        </ModalHeader>
 
-        <Content>
-          <InputField label="지출명" value={name} onChange={(e) => setName(e.target.value)} />
-          <InputField label="날짜" type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
-          <InputField label="총 금액" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <InputField label="장소" value={location} onChange={(e) => setLocation(e.target.value)} />
-          <InputField label="메모" value={memo} onChange={(e) => setMemo(e.target.value)} />
+        <ScrollableArea>
+          <InputGroup>
+            <label>지출명</label>
+            <input type="text" placeholder="예: 항공권" value={name} onChange={(e) => setName(e.target.value)} />
+          </InputGroup>
 
-          <SelectWrap>
-            <label>결제수단</label>
+          <InputGroup>
+            <label>지출 날짜</label>
+            <input type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
+          </InputGroup>
+
+          <InputGroup>
+            <label>총 금액</label>
+            <input type="number" placeholder="예: 150000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </InputGroup>
+
+          <InputGroup>
+            <label>결제 방식</label>
             <select value={payment} onChange={(e) => setPayment(e.target.value)}>
               <option value="CARD">카드</option>
               <option value="CASH">현금</option>
             </select>
-          </SelectWrap>
+          </InputGroup>
+
+          <InputGroup>
+            <label>장소</label>
+            <input type="text" placeholder="예: 홍콩 공항" value={location} onChange={(e) => setLocation(e.target.value)} />
+          </InputGroup>
+
+          <InputGroup>
+            <label>메모</label>
+            <textarea placeholder="추가 메모 입력" value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} />
+          </InputGroup>
 
           <Divider />
 
-          <h4>참여자 선택</h4>
-
+          <SectionTitle>참여자 선택</SectionTitle>
           {Object.entries(selectedMembers).map(([id, m]) => (
-            <Member key={id}>
-              <input
-                type="checkbox"
-                checked={m.selected}
-                onChange={(e) => toggleMember(Number(id), e.target.checked)}
-              />
-              <Name>{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</Name>
-
+            <MemberRow key={id}>
+              <input type="checkbox" checked={m.selected} onChange={(e) => toggleMember(Number(id), e.target.checked)} />
+              <span className="name">{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</span>
               {splitMode === "PERCENT" && m.selected && (
                 <>
-                  <Percent type="number" min={0} max={100} value={m.percent} onChange={(e) => setPercent(Number(id), e.target.value)} />
+                  <PercentInput type="number" min={0} max={100} value={m.percent} onChange={(e) => setPercent(Number(id), e.target.value)} />
                   <span>%</span>
                 </>
               )}
-
               {splitMode === "EQUAL" && m.selected && <EqualBadge>{m.percent}%</EqualBadge>}
-            </Member>
+            </MemberRow>
           ))}
 
           <EqualRow>
             <input type="checkbox" checked={splitMode === "EQUAL"} onChange={equalSplit} />
             <span>균등 분배</span>
           </EqualRow>
+        </ScrollableArea>
 
-          <BtnWrap>
-            <Button text="저장" onClick={save} />
-          </BtnWrap>
-        </Content>
-      </Box>
-    </Overlay>
+        <ModalFooter>
+          <Button text="저장" onClick={save} />
+        </ModalFooter>
+      </ModalContent>
+    </ModalOverlay>
   );
 }
 
-/* 스타일 */
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+/* ── Styled ── */
+const ModalOverlay = styled.div`
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background-color: rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;
 `;
-
-const Box = styled.div`
-  width: 520px;
-  max-width: calc(100% - 30px);
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
+const ModalContent = styled.div`
+  background-color:white; width:90%; max-width:430px;
+  border-radius:8px; overflow:hidden; max-height:90vh;
+  display:flex; flex-direction:column;
 `;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
+const ModalHeader = styled.div`
+  background-color:#3b82f6; color:white; padding:1rem;
+  display:flex; justify-content:space-between; align-items:center;
+  button { background:none; border:none; color:white; font-size:1.2rem; font-weight:bold; cursor:pointer; }
 `;
-
-const Close = styled.div`
-  font-size: 20px;
-  cursor: pointer;
+const ScrollableArea = styled.div`
+  padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem;
 `;
-
-const Content = styled.div`
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+const ModalFooter = styled.div`padding:1rem 1.5rem 1.5rem;`;
+const InputGroup = styled.div`display:flex; flex-direction:column;
+  label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;}
+  input,textarea,select{font-size:1rem;padding:0.75rem;border:1px solid #ccc;border-radius:6px;}
 `;
-
-const SelectWrap = styled.div`
-  display: flex;
-  flex-direction: column;
-  select {
-    margin-top: 4px;
-    padding: 8px;
-    border-radius: 8px;
-  }
-`;
-
-const Divider = styled.hr`
-  border: none;
-  border-top: 1px solid #eee;
-`;
-
-const Member = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const Name = styled.div`
-  flex: 1;
-  font-weight: bold;
-`;
-
-const Percent = styled.input`
-  width: 70px;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-`;
-
-const EqualBadge = styled.div`
-  background: #eaf0ff;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-weight: bold;
-`;
-
-const EqualRow = styled.div`
-  margin-top: 6px;
-  display: flex;
-  gap: 8px;
-`;
-
-const BtnWrap = styled.div`
-  display: flex;
-  justify-content: flex-end;
-`;
+const Divider = styled.div`height:1px; background-color:#ddd; margin:0.5rem 0;`;
+const SectionTitle = styled.h4`margin-top:0.5rem;font-size:1rem;font-weight:600;`;
+const MemberRow = styled.div`display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:bold;}`;
+const PercentInput = styled.input`width:60px;padding:6px;border-radius:6px;border:1px solid #ddd;`;
+const EqualBadge = styled.div`background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:bold;`;
+const EqualRow = styled.div`margin-top:6px; display:flex; gap:8px;`;
