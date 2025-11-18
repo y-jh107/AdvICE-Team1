@@ -1,3 +1,4 @@
+// src/components/ExpenseModal.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "./Button";
@@ -16,7 +17,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // 초기 멤버 셋업
+  // 초기 멤버 셋업 (로그인 안 됐으면 목업 사용)
   useEffect(() => {
     const initialMembers = members.length
       ? members
@@ -176,7 +177,11 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           <SectionTitle>참여자 선택</SectionTitle>
           {Object.entries(selectedMembers).map(([id, m]) => (
             <MemberRow key={id}>
-              <input type="checkbox" checked={m.selected} onChange={(e) => toggleMember(Number(id), e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={m.selected}
+                onChange={(e) => toggleMember(Number(id), e.target.checked)}
+              />
               <span className="name">{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</span>
               {splitMode === "PERCENT" && m.selected && (
                 <>
