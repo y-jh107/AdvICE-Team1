@@ -4,5 +4,5 @@ public record ExpenseParticipantDetailDto(
         Long userId,
         String name,
         String email,
-        Integer percent
+        Integer percent 
 ) {}

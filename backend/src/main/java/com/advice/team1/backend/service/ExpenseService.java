@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,7 +35,6 @@ public class ExpenseService {
     @Transactional
     public ExpenseDetailDto createExpense(Long groupId, Long userId, ExpenseCreateRequestDto req) {
 
-
         Group group = groups.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
 
@@ -41,7 +42,9 @@ public class ExpenseService {
             throw new IllegalArgumentException("해당 모임의 멤버만 지출을 등록할 수 있습니다.");
         }
 
-        //지출 기본 정보 저장
+        String rawMode = req.splitMode();
+        String normalizedMode = "by_percent".equalsIgnoreCase(rawMode) ? "by_percent" : "empty";
+
         Expense expense = Expense.builder()
                 .group(group)
                 .name(req.name())
@@ -51,24 +54,22 @@ public class ExpenseService {
                 .location(req.location())
                 .spentAt(req.spentAt())
                 .currency(req.currency())
-                .splitMode(req.splitMode())
+                .splitMode(normalizedMode)
                 .build();
 
         Expense saved = expenses.save(expense);
 
-        List<ExpenseParticipants> participants = saveParticipantsIfAny(groupId, saved, req);
+        List<ExpenseParticipants> participants = saveParticipantsIfAny(groupId, saved, normalizedMode, req);
 
         return toDetailDto(saved, participants);
     }
 
-    // 지출항목 각각조회
     @Transactional(readOnly = true)
     public ExpenseDetailDto getExpense(Long expenseId, Long userId) {
         Expense e = expenses.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("지출을 찾을 수 없습니다."));
 
         Long groupId = e.getGroup().getId();
-
 
         if (!groupMembers.existsByGroup_IdAndUser_Id(groupId, userId)) {
             throw new IllegalArgumentException("해당 모임의 멤버만 지출을 조회할 수 있습니다.");
@@ -80,16 +81,17 @@ public class ExpenseService {
         return toDetailDto(e, participants);
     }
 
+
     private List<ExpenseParticipants> saveParticipantsIfAny(Long groupId,
-                                                           Expense expense,
-                                                           ExpenseCreateRequestDto req) {
+                                                            Expense expense,
+                                                            String mode,
+                                                            ExpenseCreateRequestDto req) {
         List<ExpenseParticipantRequestDto> reqParticipants = req.participants();
         if (reqParticipants == null || reqParticipants.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // splitMode 가 PERCENT 인 경우, 퍼센트 합 100 체크
-        if ("PERCENT".equalsIgnoreCase(req.splitMode())) {
+        if ("by_percent".equals(mode)) {
             int sum = reqParticipants.stream()
                     .map(ExpenseParticipantRequestDto::percent)
                     .filter(p -> p != null)
@@ -100,11 +102,8 @@ public class ExpenseService {
             }
         }
 
-        if ("EQUAL".equalsIgnoreCase(req.splitMode())) {
-            // 아무 계산도 하지 않음 (percent를 null로 허용)
-        }
+        BigDecimal totalAmount = expense.getAmount();
 
-        // 각 userId 가 해당 모임 멤버인지 검증 후 저장
         List<ExpenseParticipants> participants = reqParticipants.stream()
                 .map(p -> {
                     Long participantUserId = p.userId();
@@ -116,10 +115,26 @@ public class ExpenseService {
                     User user = users.findById(participantUserId)
                             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+                    BigDecimal shareRatio = null;
+                    BigDecimal shareAmount = null;
+
+
+                    if ("by_percent".equals(mode) && p.percent() != null) {
+                        shareRatio = BigDecimal.valueOf(p.percent())
+                                .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+
+                        if (totalAmount != null) {
+                            shareAmount = totalAmount
+                                    .multiply(shareRatio)
+                                    .setScale(2, RoundingMode.HALF_UP);
+                        }
+                    }
+
                     return ExpenseParticipants.builder()
                             .expense(expense)
                             .user(user)
-                            .percent(p.percent())
+                            .shareRatio(shareRatio)
+                            .shareAmount(shareAmount)
                             .build();
                 })
                 .toList();
@@ -127,18 +142,28 @@ public class ExpenseService {
         return expenseParticipants.saveAll(participants);
     }
 
-
     private ExpenseDetailDto toDetailDto(Expense e, List<ExpenseParticipants> participants) {
         List<ExpenseParticipantDetailDto> participantDtos =
                 (participants == null || participants.isEmpty())
                         ? Collections.emptyList()
                         : participants.stream()
-                        .map(ep -> new ExpenseParticipantDetailDto(
-                                ep.getUser().getId(),
-                                ep.getUser().getName(),
-                                ep.getUser().getEmail(),
-                                ep.getPercent()
-                        ))
+                        .map(ep -> {
+                            Integer percent = null;
+                            if (ep.getShareRatio() != null) {
+                                percent = ep.getShareRatio()
+                                        .multiply(BigDecimal.valueOf(100))
+                                        .setScale(0, RoundingMode.HALF_UP)
+                                        .intValue();
+                            }
+
+                            User u = ep.getUser();
+                            return new ExpenseParticipantDetailDto(
+                                    u.getId(),
+                                    u.getName(),
+                                    u.getEmail(),
+                                    percent
+                            );
+                        })
                         .toList();
 
         return new ExpenseDetailDto(

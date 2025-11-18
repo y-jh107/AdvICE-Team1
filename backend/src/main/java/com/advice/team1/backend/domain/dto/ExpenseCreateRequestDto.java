@@ -12,6 +12,6 @@ public record ExpenseCreateRequestDto(
         String location,
         Date spentAt,
         String currency,
-        String splitMode,   // "EQUAL" / "PERCENT" 결정하는 역할
+        String splitMode,   // "empty" / "by_percent"
         List<ExpenseParticipantRequestDto> participants
 ) {}
