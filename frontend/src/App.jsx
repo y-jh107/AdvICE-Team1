@@ -12,8 +12,10 @@ import GroupForm from "./pages/GroupForm";
 import GroupCreate from "./pages/GroupCreate";
 import Calendar from "./pages/Calendar";
 
+
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+
 
 import "./App.css";
 import GlobalStyle from "./styles/GlobalStyle";
@@ -42,6 +44,7 @@ function AppWrapper() {
         <Route path="//group/:id/expense" element={<ExpenseForm />} />
         <Route path="/expenseredirect" element={<ExpenseRedirect />} />
         <Route path="/groupform" element={<GroupForm />} />
+    
       </Routes>
 
       <Footer />

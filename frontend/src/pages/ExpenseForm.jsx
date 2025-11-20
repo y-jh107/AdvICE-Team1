@@ -62,7 +62,7 @@ export default function ExpenseForm() {
       setMembers(memberList);
 
       const expenseRes = await fetch(
-        `${API_BASE_URL}/api/group/calendar/expense?groupId=${groupId}`,
+        `${API_BASE_URL}api/groups/${groupId}/expenses=${groupId}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -306,3 +306,5 @@ const InfoMessage = styled.p`
   margin-bottom: 10px;
   font-weight: bold;
 `;
+
+
