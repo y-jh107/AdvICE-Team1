@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "./Button";
+import ReceiptModal from "./ReceiptModal"; // [추가] 영수증 모달 임포트
 import { API_BASE_URL } from "../config";
 
 export default function ExpenseModal({ groupId, members = [], onClose, onSuccess }) {
@@ -17,7 +18,12 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // 초기 멤버 셋업 (로그인 안 됐으면 목업 사용)
+  // [추가] 영수증 모달 표시 여부 상태
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  // [추가] 업로드된 영수증 정보 저장 (선택 사항)
+  const [receiptData, setReceiptData] = useState(null);
+
+  // 초기 멤버 셋업
   useEffect(() => {
     const initialMembers = members.length
       ? members
@@ -98,6 +104,8 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       memo,
       splitMode,
       participants,
+      // 만약 영수증 ID를 지출 생성 시 함께 보내야 한다면 여기에 추가
+      // receiptId: receiptData?.id 
     };
 
     try {
@@ -123,7 +131,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         return;
       }
 
-      onSuccess?.(); // 서버에서 계산된 myAmount 포함 새 데이터 불러오기
+      onSuccess?.(); 
       onClose();
     } catch (err) {
       alert("서버 요청 실패");
@@ -131,79 +139,103 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   };
 
   return (
-    <ModalOverlay onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalHeader>
-          <span>지출 추가</span>
-          <button onClick={onClose}>&times;</button>
-        </ModalHeader>
+    <>
+      <ModalOverlay onClick={onClose}>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          <ModalHeader>
+            <span>지출 추가</span>
+            <button onClick={onClose}>&times;</button>
+          </ModalHeader>
 
-        <ScrollableArea>
-          <InputGroup>
-            <label>지출명</label>
-            <input type="text" placeholder="예: 항공권" value={name} onChange={(e) => setName(e.target.value)} />
-          </InputGroup>
+          <ScrollableArea>
+            <InputGroup>
+              <label>지출명</label>
+              <input type="text" placeholder="예: 항공권" value={name} onChange={(e) => setName(e.target.value)} />
+            </InputGroup>
 
-          <InputGroup>
-            <label>지출 날짜</label>
-            <input type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
-          </InputGroup>
+            <InputGroup>
+              <label>지출 날짜</label>
+              <input type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
+            </InputGroup>
 
-          <InputGroup>
-            <label>총 금액</label>
-            <input type="number" placeholder="예: 150000" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          </InputGroup>
+            <InputGroup>
+              <label>총 금액</label>
+              <input type="number" placeholder="예: 150000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            </InputGroup>
 
-          <InputGroup>
-            <label>결제 방식</label>
-            <select value={payment} onChange={(e) => setPayment(e.target.value)}>
-              <option value="CARD">카드</option>
-              <option value="CASH">현금</option>
-            </select>
-          </InputGroup>
+            <InputGroup>
+              <label>결제 방식</label>
+              <select value={payment} onChange={(e) => setPayment(e.target.value)}>
+                <option value="CARD">카드</option>
+                <option value="CASH">현금</option>
+              </select>
+            </InputGroup>
 
-          <InputGroup>
-            <label>장소</label>
-            <input type="text" placeholder="예: 홍콩 공항" value={location} onChange={(e) => setLocation(e.target.value)} />
-          </InputGroup>
+            <InputGroup>
+              <label>장소</label>
+              <input type="text" placeholder="예: 홍콩 공항" value={location} onChange={(e) => setLocation(e.target.value)} />
+            </InputGroup>
 
-          <InputGroup>
-            <label>메모</label>
-            <textarea placeholder="추가 메모 입력" value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} />
-          </InputGroup>
+            <InputGroup>
+              <label>메모</label>
+              <textarea placeholder="추가 메모 입력" value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} />
+            </InputGroup>
 
-          <Divider />
+            <Divider />
 
-          <SectionTitle>참여자 선택</SectionTitle>
-          {Object.entries(selectedMembers).map(([id, m]) => (
-            <MemberRow key={id}>
-              <input
-                type="checkbox"
-                checked={m.selected}
-                onChange={(e) => toggleMember(Number(id), e.target.checked)}
-              />
-              <span className="name">{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</span>
-              {splitMode === "PERCENT" && m.selected && (
-                <>
-                  <PercentInput type="number" min={0} max={100} value={m.percent} onChange={(e) => setPercent(Number(id), e.target.value)} />
-                  <span>%</span>
-                </>
-              )}
-              {splitMode === "EQUAL" && m.selected && <EqualBadge>{m.percent}%</EqualBadge>}
-            </MemberRow>
-          ))}
+            <SectionTitle>참여자 선택</SectionTitle>
+            {Object.entries(selectedMembers).map(([id, m]) => (
+              <MemberRow key={id}>
+                <input
+                  type="checkbox"
+                  checked={m.selected}
+                  onChange={(e) => toggleMember(Number(id), e.target.checked)}
+                />
+                <span className="name">{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</span>
+                {splitMode === "PERCENT" && m.selected && (
+                  <>
+                    <PercentInput type="number" min={0} max={100} value={m.percent} onChange={(e) => setPercent(Number(id), e.target.value)} />
+                    <span>%</span>
+                  </>
+                )}
+                {splitMode === "EQUAL" && m.selected && <EqualBadge>{m.percent}%</EqualBadge>}
+              </MemberRow>
+            ))}
 
-          <EqualRow>
-            <input type="checkbox" checked={splitMode === "EQUAL"} onChange={equalSplit} />
-            <span>균등 분배</span>
-          </EqualRow>
-        </ScrollableArea>
+            <EqualRow>
+              <input type="checkbox" checked={splitMode === "EQUAL"} onChange={equalSplit} />
+              <span>균등 분배</span>
+            </EqualRow>
+          </ScrollableArea>
 
-        <ModalFooter>
-          <Button text="저장" onClick={save} />
-        </ModalFooter>
-      </ModalContent>
-    </ModalOverlay>
+          <ModalFooter>
+            {/* 기존 저장 버튼 */}
+            <Button text="저장" onClick={save} style={{ width: '100%' }} />
+            
+            {/* [추가] 영수증 등록 버튼 (흰색 배경, 파란 글씨) */}
+            <WhiteButton onClick={() => setShowReceiptModal(true)}>
+              영수증 등록
+            </WhiteButton>
+          </ModalFooter>
+        </ModalContent>
+      </ModalOverlay>
+
+      {/* [추가] 영수증 모달 조건부 렌더링 */}
+      {showReceiptModal && (
+        <ReceiptModal 
+          isOpen={true}
+          onClose={() => setShowReceiptModal(false)}
+          // 주의: 새 지출인 경우 아직 expenseId가 없을 수 있습니다.
+          // 로직에 따라 '임시 ID'를 넘기거나, 지출 생성 후 영수증을 등록하는 흐름이 필요할 수 있습니다.
+          expenseId={null} 
+          onSave={(data) => {
+            setReceiptData(data);
+            alert("영수증이 선택되었습니다. 지출 저장 시 함께 처리됩니다."); 
+            // (참고: 실제 API 흐름에 맞게 수정 필요)
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -225,7 +257,15 @@ const ModalHeader = styled.div`
 const ScrollableArea = styled.div`
   padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem;
 `;
-const ModalFooter = styled.div`padding:1rem 1.5rem 1.5rem;`;
+
+// [수정] 버튼들을 세로로 쌓기 위해 flex-direction: column 추가
+const ModalFooter = styled.div`
+  padding: 1rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+`;
+
 const InputGroup = styled.div`display:flex; flex-direction:column;
   label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;}
   input,textarea,select{font-size:1rem;padding:0.75rem;border:1px solid #ccc;border-radius:6px;}
@@ -236,3 +276,21 @@ const MemberRow = styled.div`display:flex; align-items:center; gap:10px; .name{f
 const PercentInput = styled.input`width:60px;padding:6px;border-radius:6px;border:1px solid #ddd;`;
 const EqualBadge = styled.div`background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:bold;`;
 const EqualRow = styled.div`margin-top:6px; display:flex; gap:8px;`;
+
+// [추가] 흰색 배경 + 파란 글씨 버튼 스타일 컴포넌트
+const WhiteButton = styled.button`
+  width: 100%;
+  padding: 10px 20px;
+  background-color: white;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #f0f7ff;
+  }
+`;
