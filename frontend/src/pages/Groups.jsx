@@ -164,7 +164,7 @@ function TripDetailModal({ tripId }) {
         const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
 
-        const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, { 
             method: "GET",
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -321,7 +321,7 @@ function Groups() {
       
       <Main>
         <TopBar>
-          <Button text="+ 모임 추가하기" variant="primary" to="/groupcreate" />
+          <Button text="+ 모임 추가하기" variant="primary" to="/groupform" />
         </TopBar>
         
         {infoMessage && <InfoMessage>{infoMessage}</InfoMessage>}

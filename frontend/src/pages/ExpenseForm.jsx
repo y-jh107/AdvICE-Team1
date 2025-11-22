@@ -52,7 +52,7 @@ export default function ExpenseForm() {
     }
 
     try {
-      const groupRes = await fetch(`${API_BASE_URL}/api/groups/${groupId}`, {
+      const groupRes = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!groupRes.ok) throw new Error("그룹 상세 정보 불러오기 실패");
@@ -62,7 +62,7 @@ export default function ExpenseForm() {
       setMembers(memberList);
 
       const expenseRes = await fetch(
-        `${API_BASE_URL}api/groups/${groupId}/expenses=${groupId}`,
+        `${API_BASE_URL}/groups/${groupId}/expenses`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
