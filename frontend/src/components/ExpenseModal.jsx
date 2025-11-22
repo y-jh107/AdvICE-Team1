@@ -1,11 +1,12 @@
+// src/components/ExpenseModal.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import axios from "axios"; // axios 임포트 필수
+import axios from "axios";
 import Button from "./Button";
 import ReceiptModal from "./ReceiptModal";
 import { API_BASE_URL } from "../config";
 
-// [1] UUID 생성 함수 (Idempotency-Key용)
+// [1] UUID 생성 함수
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -25,15 +26,14 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const [payment, setPayment] = useState("CARD");
+  const [currency, setCurrency] = useState("KRW");
 
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // [3] 영수증 관련 상태 (임시 저장용)
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [tempReceiptFile, setTempReceiptFile] = useState(null);
 
-  // 초기 멤버 셋업
   useEffect(() => {
     const initialMembers = members.length ? members : [
       { userId: 1, name: "김정통" }, { userId: 2, name: "홍길동" }, { userId: 3, name: "유성열" }
@@ -79,9 +79,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     return sum === 100;
   };
 
-  // ---------------------------------------------
-  // [핵심] 저장 로직 (지출 생성 -> 영수증 업로드)
-  // ---------------------------------------------
   const save = async () => {
     if (!name || !spentAt || !amount) return alert("지출명 / 날짜 / 총 금액은 필수입니다.");
     if (!validatePercent()) return alert("참여자 퍼센트 합계는 100이어야 합니다.");
@@ -91,7 +88,15 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       .map(([id, v]) => ({ userId: Number(id), percent: v.percent }));
 
     const body = {
-      name, spentAt, amount: Number(amount), payment, location, memo, splitMode, participants
+      name,
+      spentAt,
+      amount: Number(amount),
+      payment,
+      location,
+      memo,
+      splitMode,
+      participants,
+      currency
     };
 
     let newExpenseId = null;
@@ -102,8 +107,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         onSuccess?.(); onClose(); return;
       }
 
-      // 1. 지출 생성 API 호출 (fetch 사용)
-      // [2] 경로 수정: API_BASE_URL 사용
       const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -113,35 +116,29 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "지출 등록 실패");
 
-      // ID 추출 (서버 응답 키에 따라 expenseId 혹은 id)
       newExpenseId = json.data?.expenseId || json.data?.id;
 
     } catch (err) {
       console.error(err);
       alert(`지출 저장 실패: ${err.message}`);
-      return; // 지출 실패 시 여기서 중단
+      return; 
     }
 
-    // 2. 영수증 업로드 API (지출 생성 성공 && 파일 있을 때만 실행)
     if (newExpenseId && tempReceiptFile) {
       try {
         const formData = new FormData();
         formData.append("image", tempReceiptFile);
-        
-        // [1] Idempotency-Key 생성
         const idempotencyKey = generateUUID();
 
-        // [2] 경로 수정 및 [1] 헤더 추가
         await axios.post(`${API_BASE_URL}/expenses/${newExpenseId}/receipts`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${accessToken}`,
-            "Idempotency-Key": idempotencyKey, // 필수 헤더 추가됨
+            "Idempotency-Key": idempotencyKey,
           }
         });
       } catch (uploadErr) {
         console.error("영수증 업로드 에러:", uploadErr);
-        // 지출은 이미 저장되었으므로, 사용자에게 부분 성공임을 알림
         alert("지출은 저장되었으나, 영수증 이미지 업로드에 실패했습니다.");
         onSuccess?.();
         onClose();
@@ -149,10 +146,14 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       }
     }
 
-    // 모든 과정 성공
     alert("저장되었습니다.");
     onSuccess?.();
     onClose();
+  };
+
+  // [추가] 환율 그래프 버튼 핸들러 (나중에 실제 모달 구현 필요)
+  const handleOpenExchangeRate = () => {
+    alert("환율 그래프 보기 기능 준비 중입니다.\n(여기에 1주일치 그래프 모달 구현)");
   };
 
   return (
@@ -175,17 +176,37 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
               <input type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
             </InputGroup>
 
+            {/* 금액 및 통화 선택 */}
             <InputGroup>
               <label>총 금액</label>
-              <input type="number" placeholder="예: 150000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <CurrencyContainer>
+                <CurrencyInputWrapper>
+                  <CurrencyInput
+                    type="number"
+                    placeholder="입력하세요"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                  {amount && (
+                    <ResetButton onClick={() => setAmount("")}>×</ResetButton>
+                  )}
+                </CurrencyInputWrapper>
+                <CurrencySelect value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <option value="KRW">원화</option>
+                  <option value="USD">달러</option>
+                  <option value="JPY">엔화</option>
+                  <option value="EUR">유로</option>
+                </CurrencySelect>
+              </CurrencyContainer>
             </InputGroup>
 
+            {/* 결제 방식 */}
             <InputGroup>
               <label>결제 방식</label>
-              <select value={payment} onChange={(e) => setPayment(e.target.value)}>
+              <RoundedSelect value={payment} onChange={(e) => setPayment(e.target.value)}>
                 <option value="CARD">카드</option>
                 <option value="CASH">현금</option>
-              </select>
+              </RoundedSelect>
             </InputGroup>
 
             <InputGroup>
@@ -218,20 +239,30 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           </ScrollableArea>
 
           <ModalFooter>
-            <Button text="저장" onClick={save} style={{ width: '100%' }} />
-            <WhiteButton onClick={() => setShowReceiptModal(true)} isSelected={!!tempReceiptFile}>
-              {tempReceiptFile ? "영수증 선택됨 (변경하기)" : "영수증 등록"}
+            {/* [수정됨] 환율 그래프 버튼 (가로 꽉 참) */}
+            <WhiteButton onClick={handleOpenExchangeRate}>
+              📈 환율 그래프 보기 
             </WhiteButton>
+
+            {/* [수정됨] 저장과 영수증 버튼을 감싸는 가로 컨테이너 */}
+            <ButtonRow>
+              {/* 기존 Button 컴포넌트의 style={{ width: '100%' }} 제거 (flex가 제어) */}
+              <Button text="저장" onClick={save} />
+              
+              {/* 텍스트 길이 조정 */}
+              <WhiteButton onClick={() => setShowReceiptModal(true)} isSelected={!!tempReceiptFile}>
+                {tempReceiptFile ? "영수증 변경" : "영수증 등록"}
+              </WhiteButton>
+            </ButtonRow>
           </ModalFooter>
         </ModalContent>
       </ModalOverlay>
 
-      {/* 영수증 모달 (임시 저장 모드) */}
       {showReceiptModal && (
         <ReceiptModal 
           isOpen={true}
           onClose={() => setShowReceiptModal(false)}
-          expenseId={null} // null = 생성 모드 (파일만 리턴)
+          expenseId={null} 
           onSave={(file) => setTempReceiptFile(file)}
           receiptImgData={tempReceiptFile ? URL.createObjectURL(tempReceiptFile) : null}
         />
@@ -245,8 +276,46 @@ const ModalOverlay = styled.div` position: fixed; top:0; left:0; width:100%; hei
 const ModalContent = styled.div` background-color:white; width:90%; max-width:430px; border-radius:8px; overflow:hidden; max-height:90vh; display:flex; flex-direction:column; `;
 const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:bold; cursor:pointer; } `;
 const ScrollableArea = styled.div` padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem; `;
+
+// 기존 ModalFooter는 세로 정렬 유지
 const ModalFooter = styled.div` padding: 1rem 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 10px; `;
-const InputGroup = styled.div` display:flex; flex-direction:column; label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;} input,textarea,select{font-size:1rem;padding:0.75rem;border:1px solid #ccc;border-radius:6px;} `;
+
+// [추가] 하단 버튼들을 가로로 배치하기 위한 컨테이너
+const ButtonRow = styled.div`
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  
+  /* 내부의 버튼들이 정확히 반반씩 공간을 차지하도록 설정 */
+  & > * {
+    flex: 1;
+    width: auto; /* 기존 버튼의 width: 100% 속성 무시 */
+  }
+`;
+
+const InputGroup = styled.div`
+  display:flex;
+  flex-direction:column;
+  label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;}
+
+  input[type="date"],
+  input[type="text"]:not(:first-child), 
+  textarea
+  {
+    font-size:1rem;
+    padding:0.75rem;
+    border:1px solid #ccc;
+    border-radius:6px;
+  }
+`;
+
+const CurrencyContainer = styled.div` display: flex; gap: 10px; align-items: center; `;
+const CurrencyInputWrapper = styled.div` position: relative; flex: 1; `;
+const CurrencyInput = styled.input` width: 100%; padding: 0.75rem 2.5rem 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; box-sizing: border-box; &::placeholder { color: #999; } &:focus { outline: none; border-color: #3b82f6; } `;
+const ResetButton = styled.button` position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 0; line-height: 1; `;
+const CurrencySelect = styled.select` padding: 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; min-width: 90px; cursor: pointer; &:focus { outline: none; border-color: #3b82f6; } `;
+const RoundedSelect = styled.select` width: 100%; padding: 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; background-color: white; cursor: pointer; box-sizing: border-box; &:focus { outline: none; border-color: #3b82f6; } `;
+
 const Divider = styled.div` height:1px; background-color:#ddd; margin:0.5rem 0; `;
 const SectionTitle = styled.h4` margin-top:0.5rem;font-size:1rem;font-weight:600; `;
 const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:bold;} `;
