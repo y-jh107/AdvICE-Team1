@@ -1,10 +1,20 @@
-// src/components/ExpenseModal.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import axios from "axios"; // axios 임포트 필수
 import Button from "./Button";
 import ReceiptModal from "./ReceiptModal";
 import { API_BASE_URL } from "../config";
-import axios from "axios"; // 영수증 업로드는 axios 사용 편의상 추가
+
+// [1] UUID 생성 함수 (Idempotency-Key용)
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export default function ExpenseModal({ groupId, members = [], onClose, onSuccess }) {
   const accessToken = localStorage.getItem("accessToken");
@@ -19,9 +29,9 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // [수정] 영수증 관련 상태
+  // [3] 영수증 관련 상태 (임시 저장용)
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [tempReceiptFile, setTempReceiptFile] = useState(null); // 파일 객체 임시 저장
+  const [tempReceiptFile, setTempReceiptFile] = useState(null);
 
   // 초기 멤버 셋업
   useEffect(() => {
@@ -70,13 +80,12 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   };
 
   // ---------------------------------------------
-  // [핵심 로직] 저장 (지출 생성 -> 영수증 업로드)
+  // [핵심] 저장 로직 (지출 생성 -> 영수증 업로드)
   // ---------------------------------------------
   const save = async () => {
     if (!name || !spentAt || !amount) return alert("지출명 / 날짜 / 총 금액은 필수입니다.");
     if (!validatePercent()) return alert("참여자 퍼센트 합계는 100이어야 합니다.");
 
-    // 1. 지출 데이터 생성
     const participants = Object.entries(selectedMembers)
       .filter(([_, v]) => v.selected)
       .map(([id, v]) => ({ userId: Number(id), percent: v.percent }));
@@ -85,13 +94,16 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       name, spentAt, amount: Number(amount), payment, location, memo, splitMode, participants
     };
 
+    let newExpenseId = null;
+
     try {
       if (!accessToken) {
         alert("로그인이 필요합니다. (테스트 모드)");
         onSuccess?.(); onClose(); return;
       }
 
-      // (1) 지출 생성 API 호출
+      // 1. 지출 생성 API 호출 (fetch 사용)
+      // [2] 경로 수정: API_BASE_URL 사용
       const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -101,33 +113,46 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "지출 등록 실패");
 
-      // (2) 지출 생성 성공 시, 영수증이 있다면 이어서 업로드
-      const newExpenseId = json.data?.expenseId || json.data?.id; // 응답에서 ID 추출
+      // ID 추출 (서버 응답 키에 따라 expenseId 혹은 id)
+      newExpenseId = json.data?.expenseId || json.data?.id;
 
-      if (newExpenseId && tempReceiptFile) {
+    } catch (err) {
+      console.error(err);
+      alert(`지출 저장 실패: ${err.message}`);
+      return; // 지출 실패 시 여기서 중단
+    }
+
+    // 2. 영수증 업로드 API (지출 생성 성공 && 파일 있을 때만 실행)
+    if (newExpenseId && tempReceiptFile) {
+      try {
         const formData = new FormData();
         formData.append("image", tempReceiptFile);
+        
+        // [1] Idempotency-Key 생성
+        const idempotencyKey = generateUUID();
 
-        // 영수증 업로드 API 호출
-        // 주의: axios를 쓰거나 fetch+FormData를 사용
+        // [2] 경로 수정 및 [1] 헤더 추가
         await axios.post(`${API_BASE_URL}/expenses/${newExpenseId}/receipts`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${accessToken}`,
-            // 필요시 Idempotency-Key 등 추가
+            "Idempotency-Key": idempotencyKey, // 필수 헤더 추가됨
           }
         });
+      } catch (uploadErr) {
+        console.error("영수증 업로드 에러:", uploadErr);
+        // 지출은 이미 저장되었으므로, 사용자에게 부분 성공임을 알림
+        alert("지출은 저장되었으나, 영수증 이미지 업로드에 실패했습니다.");
+        onSuccess?.();
+        onClose();
+        return;
       }
-
-      // 모든 과정 완료
-      alert("저장되었습니다.");
-      onSuccess?.();
-      onClose();
-
-    } catch (err) {
-      console.error(err);
-      alert(`저장 중 오류가 발생했습니다: ${err.message}`);
     }
+
+    // 모든 과정 성공
+    alert("저장되었습니다.");
+    onSuccess?.();
+    onClose();
   };
 
   return (
@@ -194,8 +219,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
           <ModalFooter>
             <Button text="저장" onClick={save} style={{ width: '100%' }} />
-            
-            {/* 파일이 선택되었으면 버튼 텍스트 변경하여 피드백 제공 */}
             <WhiteButton onClick={() => setShowReceiptModal(true)} isSelected={!!tempReceiptFile}>
               {tempReceiptFile ? "영수증 선택됨 (변경하기)" : "영수증 등록"}
             </WhiteButton>
@@ -203,16 +226,13 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         </ModalContent>
       </ModalOverlay>
 
-      {/* 영수증 모달 */}
+      {/* 영수증 모달 (임시 저장 모드) */}
       {showReceiptModal && (
         <ReceiptModal 
           isOpen={true}
           onClose={() => setShowReceiptModal(false)}
-          expenseId={null} // 지출 ID가 없으므로 '임시 저장 모드'로 동작
-          onSave={(file) => {
-            setTempReceiptFile(file); // 파일을 받아 state에 저장
-          }}
-          // 만약 이미 선택한 파일이 있다면 미리보기로 보여주려면 아래처럼 URL 전달 가능
+          expenseId={null} // null = 생성 모드 (파일만 리턴)
+          onSave={(file) => setTempReceiptFile(file)}
           receiptImgData={tempReceiptFile ? URL.createObjectURL(tempReceiptFile) : null}
         />
       )}
@@ -220,7 +240,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   );
 }
 
-/* ── Styled (기존 유지 + WhiteButton 수정) ── */
+// --- Styled Components ---
 const ModalOverlay = styled.div` position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000; `;
 const ModalContent = styled.div` background-color:white; width:90%; max-width:430px; border-radius:8px; overflow:hidden; max-height:90vh; display:flex; flex-direction:column; `;
 const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:bold; cursor:pointer; } `;
@@ -233,20 +253,10 @@ const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{
 const PercentInput = styled.input` width:60px;padding:6px;border-radius:6px;border:1px solid #ddd; `;
 const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:bold; `;
 const EqualRow = styled.div` margin-top:6px; display:flex; gap:8px; `;
-
 const WhiteButton = styled.button`
-  width: 100%;
-  padding: 10px 20px;
-  background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; /* 선택 시 배경색 살짝 변경 */
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: #f0f7ff;
-  }
+  width: 100%; padding: 10px 20px;
+  background-color: ${props => props.isSelected ? '#e3efff' : 'white'};
+  color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px;
+  font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+  &:hover { background-color: #f0f7ff; }
 `;
