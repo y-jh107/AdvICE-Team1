@@ -1,5 +1,5 @@
 // src/components/ReceiptModal.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import Button from './Button';
@@ -39,8 +39,8 @@ const Overlay = styled.div`
 
 const ModalContainer = styled.div`
   background-color: white;
-  width: 400px; /* 모달 너비 */
-  min-height: 400px; /* 최소 높이 확보 */
+  width: 400px;
+  min-height: 400px;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
@@ -56,7 +56,7 @@ const Header = styled.div`
   align-items: center;
   justify-content: flex-end;
   padding: 0 16px;
-  flex-shrink: 0; /* 헤더 크기 고정 */
+  flex-shrink: 0;
 `;
 
 const CloseButton = styled.button`
@@ -74,13 +74,12 @@ const Body = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1; /* 남은 공간 다 차지 */
+  flex: 1;
 `;
 
-// [수정] 이미지를 감싸는 컨테이너 (배경 및 정렬)
 const ImagePreviewContainer = styled.div`
   width: 100%;
-  height: 300px; /* 이미지 영역 높이 고정 (필요시 수정 가능) */
+  height: 300px;
   background-color: #F8F9FA;
   border: 1px dashed #E0E0E0;
   border-radius: 8px;
@@ -96,15 +95,13 @@ const ImagePreviewContainer = styled.div`
   }
 `;
 
-// [수정] 실제 보여질 이미지 스타일
 const StyledReceiptImage = styled.img`
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain; /* 비율 유지하며 컨테이너 안에 맞춤 */
+  object-fit: contain;
   display: block;
 `;
 
-// [추가] 이미지가 없을 때 보여줄 플레이스홀더 아이콘 스타일
 const PlaceholderIcon = styled.img`
   width: 60px;
   opacity: 0.5;
@@ -114,10 +111,9 @@ const Footer = styled.div`
   display: flex;
   justify-content: flex-end;
   width: 100%;
-  margin-top: auto; /* 푸터를 바닥으로 밀기 */
+  margin-top: auto;
 `;
 
-// [확대 모달 관련]
 const ZoomOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -140,7 +136,14 @@ const ZoomedImage = styled.img`
 
 // --- [Component Implementation] ---
 
-const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
+// [수정] receiptImgData prop 추가
+const ReceiptModal = ({ 
+  isOpen = true, // 기본값 true (ExpenseForm에서 조건부 렌더링하므로)
+  onClose, 
+  onSave, 
+  expenseId, 
+  receiptImgData // 부모 컴포넌트(ExpenseForm)에서 넘겨준 이미지 데이터 (URL 또는 Base64)
+}) => {
   
   const [receiptFile, setReceiptFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -149,6 +152,15 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
 
   const fileInputRef = useRef(null);
 
+  // [추가] receiptImgData가 들어오면 미리보기 URL로 설정 (초기화 로직)
+  useEffect(() => {
+    if (receiptImgData) {
+      setPreviewUrl(receiptImgData);
+    }
+  }, [receiptImgData]);
+
+  // ExpenseForm에서 조건부 렌더링({showReceiptModal && ...})을 하더라도
+  // 내부에서 한 번 더 체크해도 무방합니다.
   if (!isOpen) return null;
 
   const handleUploadClick = () => {
@@ -160,7 +172,7 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
     if (file) {
       setReceiptFile(file);
       const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setPreviewUrl(url); // 새 파일을 선택하면 미리보기를 교체
     }
   };
 
@@ -212,7 +224,7 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
         
         if (onSave) {
           onSave({ 
-            receiptData: resData.data // 파일 데이터만 전달
+            receiptData: resData.data 
           });
         }
         onClose();
@@ -222,6 +234,7 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
       }
 
     } catch (error) {
+      // 에러 처리 로직 유지
       if (error.response && error.response.data) {
         const errData = error.response.data;
         if (errData.code === 'TL') {
@@ -259,7 +272,7 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
           </Header>
 
           <Body>
-            {/* 1. 상단: 파일 업로드 버튼 */}
+            {/* 1. 상단: 파일 업로드/변경 버튼 */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <input 
                   type="file" 
@@ -269,6 +282,7 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
                   onChange={handleFileChange}
                 />
                 <Button 
+                  // 이미지가 있으면 '변경하기', 없으면 '업로드' 텍스트 표시
                   text={previewUrl ? "이미지 변경하기" : "+ 파일 업로드"}
                   variant="primary" 
                   onClick={handleUploadClick}
@@ -276,17 +290,19 @@ const ReceiptModal = ({ isOpen, onClose, onSave, expenseId = '123' }) => {
                 />
             </div>
 
-            {/* 2. 중단: 이미지 미리보기 영역 (버튼 아래 위치) */}
+            {/* 2. 중단: 이미지 미리보기 영역 */}
             <ImagePreviewContainer onClick={handleImageClick}>
                 {previewUrl ? (
                     <StyledReceiptImage src={previewUrl} alt="Receipt Preview" />
                 ) : (
-                    // 이미지가 없을 땐 기본 아이콘 표시
                     <PlaceholderIcon src={ReceiptOutlineImage} alt="No Image" />
                 )}
             </ImagePreviewContainer>
             
-            {/* 3. 하단: 저장 버튼 */}
+            {/* 3. 하단: 저장 버튼 
+               (단순 조회의 경우 저장 버튼을 숨기고 싶다면 조건부 렌더링을 추가할 수 있습니다.
+                여기서는 사용자가 이미지를 교체할 수도 있으므로 그대로 둡니다.) 
+            */}
             <Footer>
               <Button 
                 text={isLoading ? "저장 중..." : "저장"} 
