@@ -24,11 +24,17 @@ public class Expense {
     private String memo;
     private String location;
 
+    @Column(name="spent_at")
     private Date spentAt;
     private String currency;
+
+    @Column(name="split_mode")
     private String splitMode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     private Group group;
+
+    @OneToOne(mappedBy = "expense", cascade = CascadeType.ALL)
+    private Receipt receipt;
 }
