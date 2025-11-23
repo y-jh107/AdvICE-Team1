@@ -1,25 +1,33 @@
 import React, { useState, useMemo, useEffect } from "react"; 
 import styled from "styled-components";
+// [수정] URL 파라미터를 읽기 위해 추가
+import { useSearchParams } from "react-router-dom"; 
 import Header from "../components/Header";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
+// [수정] API 주소 설정 가져오기
+import { API_BASE_URL } from "../config"; 
 
-// --- 날짜 포맷 헬퍼 함수 ---
+// --- 1. 헬퍼 함수 & 상수 ---
 const formatDateString = (date) => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`; // "yyyy-mm-dd"
+  return `${year}-${month}-${day}`; 
 };
 
-// --- (추가) 일정 색상 배열 ---
 const SCHEDULE_COLORS = {
-  event: "#eef2ff", // 여행 일정 (연한 남색)
-  // expense: "#dcfce7", // (지출 항목은 현재 생성 불가)
+  event: "#eef2ff", 
 };
 
-// --- Styled Components ---
+const CALENDAR_DAYS = ["MON", "TUE", "WED", "THUR", "FRI", "SAT", "SUN"];
 
+const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+});
+
+// --- 2. 스타일 컴포넌트 ---
 const PageWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -129,7 +137,6 @@ const ScheduleItem = styled.div`
   }
 `;
 
-// --- 모달 (Modal) 관련 Styled Components ---
 const ModalOverlay = styled.div`
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background-color: rgba(0, 0, 0, 0.5); display: flex;
@@ -169,49 +176,53 @@ const ModalFooter = styled.div`
   padding: 0 1.5rem 1.5rem 1.5rem;
   ${Button} { width: 100%; padding: 0.75rem; font-size: 1rem; }
 `;
-// --- 모달 끝 ---
 
-// --- Calendar 컴포넌트 ---
 
-const CALENDAR_DAYS = ["MON", "TUE", "WED", "THUR", "FRI", "SAT", "SUN"];
-
-const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-});
-
+// --- 3. 메인 컴포넌트 ---
 function Calendar() {
+  // [핵심 수정 1] URL 쿼리 파라미터에서 groupId 추출
+  const [searchParams] = useSearchParams();
+  const groupId = searchParams.get("groupId");
+
+  // 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
+  // 입력 폼 상태
   const [scheduleInput, setScheduleInput] = useState("");
   const [dateInput, setDateInput] = useState(() => formatDateString(new Date()));
   const [timeInput, setTimeInput] = useState("09:00");
   const [placeInput, setPlaceInput] = useState("");
 
+  // 데이터 상태
   const [selectedDetail, setSelectedDetail] = useState(null);
-  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState({});
-  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // '목록 조회' API가 없으므로 월이 바뀌면 캘린더를 비웁니다.
+  // 초기화 시 groupId 확인
+  useEffect(() => {
+    if (!groupId) {
+      alert("잘못된 접근입니다. 모임 정보가 없습니다.");
+    }
+  }, [groupId]);
+
+  // 월 변경 시 스케줄 초기화 (추후 GET API 연동 위치)
   useEffect(() => {
     setSchedules({});
-    console.log(`${dateFormatter.format(currentDate)}로 월 변경. 캘린더 비움.`);
+    console.log(`${dateFormatter.format(currentDate)}로 변경됨. (API 조회 필요)`);
   }, [currentDate]);
 
-  // 캘린더 날짜 배열 계산 (변경 없음)
+  // 달력 날짜 계산 (useMemo)
   const calendarDates = useMemo(() => {
-    // ... (이전 코드와 동일) ...
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDayOfMonth = new Date(year, month, 1);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
     const startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+    
     const dates = [];
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       dates.push({ day: daysInPrevMonth - i, isCurrentMonth: false });
@@ -226,15 +237,10 @@ function Calendar() {
     return dates;
   }, [currentDate]);
 
-  // 월 이동 핸들러 (변경 없음)
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
+  // 핸들러 함수들
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   
-  // '추가하기' 모달 열기 (변경 없음)
   const handleOpenAddModal = () => {
     const firstDayOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     setDateInput(formatDateString(firstDayOfCurrentMonth)); 
@@ -243,15 +249,16 @@ function Calendar() {
     setPlaceInput("");
     setIsAddModalOpen(true);
   };
+  const handleCloseAddModal = () => setIsAddModalOpen(false);
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-  };
-
-  // '일정 등록' (POST) API 연동 함수
+  // [핵심 수정 2] 일정 저장 (POST)
   const handleSave = async () => {
     if (!scheduleInput || !dateInput || !timeInput) {
       alert("일정, 날짜, 시간을 모두 입력해주세요.");
+      return;
+    }
+    if (!groupId) {
+      alert("모임 정보를 찾을 수 없습니다.");
       return;
     }
     if (isLoading) return;
@@ -259,15 +266,13 @@ function Calendar() {
     setIsLoading(true);
     setError(null);
 
-    const groupId = localStorage.getItem("currentGroupId");
     const accessToken = localStorage.getItem("accessToken");
-
-    if (!groupId || !accessToken) {
-      alert("로그인 또는 그룹 정보가 없습니다.");
-      setIsLoading(false);
-      return;
+    if (!accessToken) {
+        alert("로그인이 필요합니다.");
+        setIsLoading(false);
+        return;
     }
-    
+
     try {
       const dateString = `${dateInput}T${timeInput}:00+09:00`;
       
@@ -277,8 +282,8 @@ function Calendar() {
         date: dateString,
       };
 
-      // (API 연동) 1. '일정 등록' API 호출
-      const response = await fetch(`/group/${groupId}/calendar/event`, {
+      // API_BASE_URL과 groupId 사용
+      const response = await fetch(`${API_BASE_URL}/groups/${groupId}/calendar/event`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -291,35 +296,29 @@ function Calendar() {
       const responseData = await response.json();
 
       if (responseData.code === "SU") {
-        // (성공) 
-        // 1. 서버가 돌려준 데이터 (명세서엔 eventId가 없음, request를 그대로 돌려줌)
-        // (가정) 백엔드가 `request` 대신 `data.event` 객체를 반환한다고 가정
         const newEvent = responseData.data.event || {
-          eventId: Date.now(), // 임시 ID
+          eventId: Date.now(),
           name: scheduleInput,
           date: dateString
         }; 
         
         const day = new Date(newEvent.date).getDate();
-        
         const schedulesForDay = schedules[day] || [];
-        const newColor = SCHEDULE_COLORS['event'];
         
-        // (변경) 2. state에 저장 시 'type'과 'id'를 명확히 저장
         const newScheduleItem = {
-          id: newEvent.eventId, // '상세 조회' 시 사용할 ID
+          id: newEvent.eventId,
           title: newEvent.name,
-          type: 'event', // 이 일정은 'event' 타입임을 명시
-          color: newColor,
+          type: 'event',
+          color: SCHEDULE_COLORS.event,
         };
 
-        // 3. 캘린더 state에 즉시 반영
         setSchedules((prevSchedules) => ({
           ...prevSchedules,
           [day]: [...schedulesForDay, newScheduleItem],
         }));
         
         handleCloseAddModal();
+        alert("일정이 등록되었습니다.");
       } else {
         throw new Error(responseData.message || "등록에 실패했습니다.");
       }
@@ -331,12 +330,15 @@ function Calendar() {
     }
   };
   
-  // (변경) '일정 상세' (GET) API 연동 함수
+  // [핵심 수정 3] 일정 상세 조회 (GET)
   const handleEventClick = async (schedule) => {
-    // (변경) 1. 'expense' 타입이면 API를 호출하지 않음
     if (schedule.type !== 'event') {
       alert("지출 항목 상세 조회는 현재 지원되지 않습니다.");
       return;
+    }
+    if (!groupId) {
+        alert("모임 정보를 찾을 수 없습니다.");
+        return;
     }
 
     setIsDetailModalOpen(true);
@@ -344,19 +346,10 @@ function Calendar() {
     setIsLoading(true);
     setError(null);
     
-    const groupId = localStorage.getItem("currentGroupId");
     const accessToken = localStorage.getItem("accessToken");
 
-    if (!groupId || !accessToken) {
-      alert("로그인 또는 그룹 정보가 없습니다.");
-      setIsLoading(false);
-      setIsDetailModalOpen(false);
-      return;
-    }
-
     try {
-      // (변경) 2. 'event' 타입이므로, 'eventId' 경로로만 API 호출
-      const apiUrl = `/group/${groupId}/calendar/${schedule.id}`;
+      const apiUrl = `${API_BASE_URL}/groups/${groupId}/calendar/${schedule.id}`;
       
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -428,7 +421,7 @@ function Calendar() {
 
       <Footer />
 
-      {/* 1. '일정 추가' 모달 */}
+      {/* 일정 추가 모달 */}
       {isAddModalOpen && (
         <ModalOverlay onClick={handleCloseAddModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -488,7 +481,7 @@ function Calendar() {
         </ModalOverlay>
       )}
       
-      {/* 2. '일정 상세' 모달 */}
+      {/* 일정 상세 모달 */}
       {isDetailModalOpen && (
         <ModalOverlay onClick={() => setIsDetailModalOpen(false)}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -508,7 +501,6 @@ function Calendar() {
                   {selectedDetail.location && (
                     <DetailText><span>장소:</span> {selectedDetail.location}</DetailText>
                   )}
-                  {/* (참고) 지출 항목은 상세 조회가 불가능하므로 amount는 표시되지 않음 */}
                 </>
               )}
             </ModalBody>
