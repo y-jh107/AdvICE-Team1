@@ -56,7 +56,7 @@ const Title = styled.h2`
   margin-bottom: 2rem;
   text-align: center;
   font-size: 1.8rem; 
-  font-weight: 700;  
+  font-weight: 600;  
   color: inherit; 
 `;
 const MemberTable = styled.div`
@@ -73,7 +73,7 @@ const Row = styled.div`
   border-radius: 6px;
   &:first-child {
     background-color: #f4f6f8;
-    font-weight: bold;
+    font-weight: normal;
   }
 `;
 const Cell = styled.div`
@@ -153,7 +153,7 @@ const InfoMessage = styled.p`
   text-align: center;
   color: #dc3545;
   margin-bottom: 20px;
-  font-weight: bold;
+  font-weight: 400;
 `;
 
 const ITEMS_PER_LOAD = 3;

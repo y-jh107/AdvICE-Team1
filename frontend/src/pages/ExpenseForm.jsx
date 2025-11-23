@@ -7,31 +7,6 @@ import { jwtDecode } from "jwt-decode";
 import { useParams } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
-const mockExpenses = [
-  {
-    id: 1,
-    date: "2025.09.15",
-    name: "편의점",
-    totalAmount: 10000,
-    myAmount: 0,
-    location: "GS25 시부야점",
-    memo: "생수랑 과자 구매함",
-    payment: "CARD",
-    receiptId: null,
-  },
-  {
-    id: 2,
-    date: "2025.09.15",
-    name: "카페",
-    totalAmount: 10000,
-    myAmount: 0,
-    location: "스타벅스 시부야점",
-    memo: "아이스 라떼 마심",
-    payment: "CASH",
-    receiptId: "r_003",
-  },
-];
-
 export default function ExpenseForm() {
   const { groupId } = useParams();
 
@@ -39,11 +14,9 @@ export default function ExpenseForm() {
   const [members, setMembers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(3);
 
-  // 추가된 상태들
   const [paymentFilter, setPaymentFilter] = useState("CARD");
-  const [groupName, setGroupName] = useState("");
+  const [groupName, setGroupName] = useState("여행");
 
-  // Modal
   const [showModal, setShowModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
@@ -54,17 +27,18 @@ export default function ExpenseForm() {
   const accessToken = localStorage.getItem("accessToken");
   const user = accessToken ? jwtDecode(accessToken) : null;
 
-  /** 모임 정보 + 지출 불러오기 */
+  /** 그룹 정보 + 지출 불러오기 */
   const fetchGroupData = async () => {
     if (!accessToken) {
       setMembers([]);
-      setExpenses(mockExpenses);
+      setExpenses([]); // 목업 제거 → 빈 배열로 설정
       setGroupName("여행");
       setInfoMessage("로그인 후 실제 지출 내역을 확인할 수 있습니다.");
       return;
     }
 
     try {
+      // 그룹 정보
       const groupRes = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -73,11 +47,12 @@ export default function ExpenseForm() {
 
       const groupData = await groupRes.json();
       const memberList = groupData?.data?.members ?? [];
+      const name = groupData?.data?.group?.name;
+
       setMembers(memberList);
+      if (name) setGroupName(name);
 
-      // 여행명 설정
-      setGroupName(groupData?.data?.group?.name || "여행");
-
+      // 지출 정보
       const expenseRes = await fetch(
         `${API_BASE_URL}/groups/${groupId}/expenses`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -100,11 +75,12 @@ export default function ExpenseForm() {
         receiptId: it.receiptId || null,
       }));
 
-      setExpenses(normalized.length > 0 ? normalized : mockExpenses);
+      setExpenses(normalized);
       setInfoMessage("");
+
     } catch (err) {
       console.error(err);
-      setExpenses(mockExpenses);
+      setExpenses([]); // 목업 제거된 버전 → 빈 배열
       setMembers([]);
       setGroupName("여행");
       setInfoMessage(err.message);
@@ -116,7 +92,7 @@ export default function ExpenseForm() {
     fetchGroupData();
   }, [groupId]);
 
-  /** 영수증 이미지 fetch */
+  /** 영수증 이미지 불러오기 */
   const fetchReceiptImage = async (receiptId) => {
     if (!receiptId) {
       alert("등록된 영수증이 없습니다.");
@@ -156,39 +132,41 @@ export default function ExpenseForm() {
   };
 
   const handleOpenReceipt = (expense) => {
-    setSelectedExpenseId(expense.id);
-
     if (!accessToken) return alert("로그인이 필요합니다.");
-
     if (expense.receiptId) fetchReceiptImage(expense.receiptId);
     else alert("등록된 영수증이 없습니다.");
   };
+
+  const filteredExpenses = expenses.filter(
+    (e) => e.payment === paymentFilter
+  );
 
   const handleMore = () => {
     if (visibleCount >= filteredExpenses.length) setVisibleCount(3);
     else setVisibleCount((prev) => prev + 3);
   };
 
-  // 카드/현금 필터링
-  const filteredExpenses = expenses.filter(
-    (e) => e.payment === paymentFilter
-  );
-
   return (
     <Wrapper>
-      {/* 여행명 표시 */}
       <Title>{groupName}</Title>
 
       <TopRow>
-        <Select
-          value={paymentFilter}
-          onChange={(e) => setPaymentFilter(e.target.value)}
-        >
-          <option value="CARD">카드</option>
-          <option value="CASH">현금</option>
-        </Select>
+        <FilterButtonGroup>
+          <FilterButton
+            active={paymentFilter === "CARD"}
+            onClick={() => setPaymentFilter("CARD")}
+          >
+            카드
+          </FilterButton>
+          <FilterButton
+            active={paymentFilter === "CASH"}
+            onClick={() => setPaymentFilter("CASH")}
+          >
+            현금
+          </FilterButton>
+        </FilterButtonGroup>
 
-        <AddButton onClick={() => setShowModal(true)}>+ 추가하기</AddButton>
+        <AddButton onClick={() => setShowModal(true)}>추가하기</AddButton>
       </TopRow>
 
       {infoMessage && <InfoMessage>{infoMessage}</InfoMessage>}
@@ -214,10 +192,9 @@ export default function ExpenseForm() {
                 <Cell>{e.totalAmount.toLocaleString()}원</Cell>
                 <Cell>{e.myAmount.toLocaleString()}원</Cell>
                 <Cell>{e.location}</Cell>
-                <ReceiptIcon onClick={() => handleOpenReceipt(e)}>
-                  📄
-                </ReceiptIcon>
+                <ReceiptIcon onClick={() => handleOpenReceipt(e)}>📄</ReceiptIcon>
               </DataRow>
+
               {e.memo && <Tooltip>{e.memo}</Tooltip>}
             </TooltipWrapper>
           ))}
@@ -262,7 +239,6 @@ export default function ExpenseForm() {
   );
 }
 
-/* -------------------- Styled -------------------- */
 const Wrapper = styled.div`
   padding: 30px 40px;
   @media (max-width: 780px) {
@@ -289,8 +265,8 @@ const AddButton = styled.button`
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
-  font-weight: bold;
   cursor: pointer;
+  font-weight: normal;
 `;
 const TableBox = styled.div`
   width: 100%;
@@ -305,7 +281,7 @@ const HeaderRow = styled.div`
   background: #226cff;
   color: white;
   padding: 12px;
-  font-weight: bold;
+  font-weight: normal;
   font-size: 14px;
 `;
 const ScrollBody = styled.div`
@@ -365,7 +341,7 @@ const MoreButton = styled.button`
   border: none;
   padding: 10px;
   border-radius: 10px;
-  font-weight: bold;
+  font-weight: normal;
 `;
 const Hint = styled.div`
   text-align: center;
@@ -385,5 +361,30 @@ const InfoMessage = styled.p`
   text-align: center;
   color: #dc3545;
   margin-bottom: 10px;
-  font-weight: bold;
+  font-weight: normal;
+`;
+
+const FilterButtonGroup = styled.div`
+  display: flex;
+  background: #e7f0ff;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+  height: fit-content;
+`;
+
+const FilterButton = styled.button`
+  background: ${(props) => (props.active ? "#226cff" : "transparent")};
+  color: ${(props) => (props.active ? "white" : "#226cff")};
+  border: none;
+  padding: 9px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${(props) => (props.active ? "#1a5be6" : "#d0e2ff")};
+  }
 `;

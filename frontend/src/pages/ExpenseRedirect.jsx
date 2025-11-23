@@ -142,10 +142,10 @@ export default function ExpenseRedirect() {
         {groupName ? (
           <>
             <span>{groupName}</span> 모임<br />
-            무엇을 하시겠어요?
+            선택지
           </>
         ) : (
-          "무엇을 하시겠어요?"
+          "아래에 보이는 네모 상자를 선택해주세요"
         )}
       </Title>
       <ButtonGrid>
