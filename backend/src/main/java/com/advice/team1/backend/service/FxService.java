@@ -2,17 +2,18 @@ package com.advice.team1.backend.service;
 
 import com.advice.team1.backend.common.cache.FxCache;
 import com.advice.team1.backend.common.config.FxProperties;
+import com.advice.team1.backend.domain.dto.FxDailyDto;
 import com.advice.team1.backend.domain.dto.FxDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,48 +23,65 @@ public class FxService {
     private final RestTemplate restTemplate;
     private final FxProperties fxProperties;
 
-    private static final Set<String> TARGET_CURRENCIES = Set.of(
-            "USD", "JPY(100)", "CNY", "VND", "THB", "SGD",
-            "EUR", "CAD", "GBP", "PHP", "HKD"
-    );
+    public List<FxDailyDto> getWeeklyRates(LocalDate date, String currency) {
+        List<FxDailyDto> result = new ArrayList<>();
 
-    public List<FxDto> getFxRates() {
+        for (int i = 6; i >= 0; i--) {
+            LocalDate target = date.minusDays(i);
 
-        LocalDate today = LocalDate.now();
+            FxDto fx = getFxWithFallback(target, currency);
+            if (fx == null) {
+                result.add(new FxDailyDto(target, null));
+            } else {
+                BigDecimal rate = parseRate(fx);
+                result.add(new FxDailyDto(target, rate));
+            }
+        }
+        return result;
+    }
 
-        List<FxDto> cached = fxCache.get(today);
-        if (cached != null) {
-            return cached;
+    private BigDecimal parseRate(FxDto fx) {
+        if (fx == null || fx.getDealBasRate() == null) return null;
+
+        String raw = fx.getDealBasRate().replace(",", "").trim();
+        BigDecimal val = new BigDecimal(raw);
+
+        // 단위가 100이면 → 1단위 환산 (예: JPY(100))
+        if (fx.getCurrency() != null && fx.getCurrency().contains("100")) {
+            val = val.divide(BigDecimal.valueOf(100));
         }
 
-        List<FxDto> fxRates = callApi(today);
+        return val;
+    }
 
-        boolean invalid = fxRates.stream()
-                .anyMatch(dto -> dto.getCurrency() == null);
+    public FxDto getFxWithFallback(LocalDate date, String currency) {
 
-        if (invalid) {
-            LocalDate previous = today.minusDays(1);
-            fxRates = callApi(previous);
+        for (int i = 0; i < 5; i++) {   // 최대 5일 뒤로 fallback
+            LocalDate fallbackDate = date.minusDays(i);
+
+            List<FxDto> list = callApi(fallbackDate);
+            FxDto match = list.stream()
+                    .filter(dto -> dto.getCurrency().equals(currency))
+                    .findFirst()
+                    .orElse(null);
+
+            if (match != null) return match;
         }
 
-        fxCache.put(today, fxRates);
-
-        return fxRates;
+        return null;
     }
 
     public List<FxDto> callApi(LocalDate date) {
-
         String url = fxProperties.getUrl()
                 + "?authkey=" + fxProperties.getApiKey()
                 + "&searchdate=" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 + "&data=AP01";
 
         FxDto[] response = restTemplate.getForObject(url, FxDto[].class);
-
         if (response == null) return List.of();
 
         return Arrays.stream(response)
-                .filter(dto -> TARGET_CURRENCIES.contains(dto.getCurrency()))
-                .collect(Collectors.toList());
+                .filter(dto -> dto.getCurrency() != null)
+                .toList();
     }
 }

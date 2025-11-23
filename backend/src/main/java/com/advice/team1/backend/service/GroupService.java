@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 @Service
@@ -106,9 +107,10 @@ public class GroupService {
                     return new GroupDto(
                             g.getId(),
                             g.getName(),
-                            null,
-                            null,
-                            null
+                            g.getDescription(),
+                            g.getStartDate(),
+                            g.getEndDate(),
+                            Base64.getEncoder().encodeToString(g.getGroupImage())
                     );
                 })
                 .collect(Collectors.toList());

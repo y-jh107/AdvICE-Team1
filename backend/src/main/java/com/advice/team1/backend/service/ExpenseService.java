@@ -73,6 +73,28 @@ public class ExpenseService {
         return toDetailDto(e, participants);
     }
 
+    @Transactional(readOnly = true)
+    public List<ExpenseDetailDto> getExpenses(Long groupId, Long userId) {
+
+        // 해당 유저가 그룹 멤버인지 검증
+        if (!groupMembers.existsByGroup_IdAndUser_Id(groupId, userId)) {
+            throw new IllegalArgumentException("해당 모임의 멤버만 지출을 조회할 수 있습니다.");
+        }
+
+        // 해당 그룹의 모든 Expense 조회
+        List<Expense> expenseList = expenses.findByGroup_Id(groupId);
+
+        // 각 Expense마다 participants 조회 → ExpenseDetailDto 변환
+        return expenseList.stream()
+                .map(e -> {
+                    List<ExpenseParticipants> participants =
+                            expenseParticipants.findByExpense_Id(e.getId());
+
+                    return toDetailDto(e, participants);
+                })
+                .toList();
+    }
+
     private List<ExpenseParticipants> saveParticipantsIfAny(Long groupId,
                                                             Expense expense,
                                                             String mode,

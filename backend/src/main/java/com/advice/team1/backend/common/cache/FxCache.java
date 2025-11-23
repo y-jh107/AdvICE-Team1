@@ -4,32 +4,23 @@ import com.advice.team1.backend.domain.dto.FxDto;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class FxCache {
 
-    private final Map<LocalDate, List<FxDto>> cache = new HashMap<>();
+    private final Map<String, FxDto> cache = new ConcurrentHashMap<>();
 
-    private final int CACHE_DAYS = 7;
-
-    public synchronized void put(LocalDate date, List<FxDto> fxRates) {
-        cache.put(date, fxRates);
-        cleanUp();
+    private String key(LocalDate date, String currency) {
+        return date.toString() + "_" + currency;
     }
 
-    public synchronized List<FxDto> get(LocalDate date) {
-        return cache.get(date);
+    public FxDto get(LocalDate date, String currency) {
+        return cache.get(key(date, currency));
     }
 
-    public synchronized boolean hasToday() {
-        return cache.containsKey(LocalDate.now());
-    }
-
-    private void cleanUp() {
-        LocalDate thresholdDate = LocalDate.now().minusDays(CACHE_DAYS);
-        cache.keySet().removeIf(date -> date.isBefore(thresholdDate));
+    public void put(LocalDate date, String currency, FxDto dto) {
+        cache.put(key(date, currency), dto);
     }
 }

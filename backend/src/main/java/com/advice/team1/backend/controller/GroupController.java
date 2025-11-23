@@ -67,4 +67,14 @@ public class GroupController {
         ExpenseDetailDto dto = expenseService.createExpense(groupId, userId, req);
         return ApiResponse.success("지출 항목 등록 성공", dto);
     }
+
+    @GetMapping("/{groupId}/expenses")
+    public ApiResponse<List<ExpenseDetailDto>> getExpenseDetail(
+            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserPrincipal user
+    ) {
+        List<ExpenseDetailDto> expenses = expenseService.getExpenses(groupId, user.getId());
+
+        return ApiResponse.success("지출 내역 조회 성공", expenses);
+    }
 }

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.Date;
+import java.util.Base64;
 
 @Data
 @AllArgsConstructor
@@ -17,6 +17,7 @@ public class GroupDto {
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;
+    private String image;
 
     public GroupDto(Group group) {
         this.id = group.getId();
@@ -24,5 +25,6 @@ public class GroupDto {
         this.description = group.getDescription();
         this.startDate = group.getStartDate();
         this.endDate = group.getEndDate();
+        this.image = Base64.getEncoder().encodeToString(group.getGroupImage());
     }
 }
