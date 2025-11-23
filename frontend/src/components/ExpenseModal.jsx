@@ -129,9 +129,14 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       .map(([id, v]) => ({ userId: Number(id), percent: v.percent }));
 
     const body = {
-      name, spentAt, 
+      name,
+      spentAt,
       amount: finalAmountKRW,
-      payment, location, memo, splitMode, participants,
+      payment,
+      location,
+      memo,
+      splitMode: splitMode === "EQUAL" ? "equal" : "by_percent", // 소문자로 변환
+      participants,
       currency: "KRW"
     };
 

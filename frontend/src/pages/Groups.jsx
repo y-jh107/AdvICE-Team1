@@ -332,10 +332,8 @@ function Groups() {
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => (
               <Link 
-                key={travel.id} 
-                // --- ⬇️ 수정된 부분 ⬇️ ---
-                to={`/group/${travel.id}/expense`} 
-                // --- ⬆️ 수정된 부분 ⬆️ ---
+                key={travel.id}
+                to={`/expenseredirect?groupId=${travel.id}&groupName=${encodeURIComponent(travel.name)}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <Card 
