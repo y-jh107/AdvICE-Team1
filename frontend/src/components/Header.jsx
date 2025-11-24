@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Button from "./Button";
 import logoImage from "../assets/Logo.png";
@@ -22,7 +22,7 @@ const HeaderContainer = styled.header`
 
 const Logo = styled.img`
   height: 40px;
-  cursor: pointer;
+  cursor: default; /* 클릭 불가 표시 */
 `;
 
 const NavLinks = styled.nav`
@@ -42,7 +42,6 @@ const StyledLink = styled(Link)`
 
 function Header() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const isLoggedIn = !!localStorage.getItem("accessToken");
 
@@ -55,9 +54,8 @@ function Header() {
 
   return (
     <HeaderContainer>
-      <Link to="/">
-        <Logo src={logoImage} alt="YeoBi Logo" />
-      </Link>
+      {/* 클릭 불가 로고 */}
+      <Logo src={logoImage} alt="YeoBi Logo" />
 
       <NavLinks>
         {isLoggedIn && <StyledLink to="/groups">내 여행</StyledLink>}

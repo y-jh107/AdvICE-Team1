@@ -56,7 +56,7 @@ const Title = styled.h2`
   margin-bottom: 2rem;
   text-align: center;
   font-size: 1.8rem; 
-  font-weight: 700;  
+  font-weight: 600;  
   color: inherit; 
 `;
 const MemberTable = styled.div`
@@ -73,7 +73,7 @@ const Row = styled.div`
   border-radius: 6px;
   &:first-child {
     background-color: #f4f6f8;
-    font-weight: bold;
+    font-weight: normal;
   }
 `;
 const Cell = styled.div`
@@ -123,6 +123,17 @@ const Card = styled.div`
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   }
 `;
+
+// [추가됨] 이미지 태그 스타일
+const CardImage = styled.img`
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  background-color: #f0f0e0;
+`;
+
 const ImagePlaceholder = styled.div`
   width: 100%;
   height: 180px;
@@ -142,13 +153,13 @@ const InfoMessage = styled.p`
   text-align: center;
   color: #dc3545;
   margin-bottom: 20px;
-  font-weight: bold;
+  font-weight: 400;
 `;
 
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId }) {
+function TripDetailModal({ tripId }) { // tripId 확인됨
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -164,7 +175,8 @@ function TripDetailModal({ tripId }) {
         const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
 
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, { 
+        // groupId -> tripId 수정 유지됨
+        const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
             method: "GET",
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -200,20 +212,20 @@ function TripDetailModal({ tripId }) {
   return (
     <DetailWrapper>
       <Title>
-        {details.group.name}
+        {details.group?.name}
       </Title>
       
       <MemberTable>
         <Row>
-          <Cell>{details.owner.name}</Cell>
-          <Cell>{details.owner.email}</Cell>
-          <Cell>{details.owner.totalSpend.toLocaleString('ko-KR')}원</Cell>
+          <Cell>{details.owner?.name}</Cell>
+          <Cell>{details.owner?.email}</Cell>
+          <Cell>{details.owner?.totalSpend?.toLocaleString('ko-KR')}원</Cell>
         </Row>
-        {details.members.map(member => (
+        {details.members && details.members.map(member => (
           <Row key={member.id}>
             <Cell>{member.name}</Cell>
             <Cell>{member.userId}</Cell>
-            <Cell>{member.totalSpend.toLocaleString('ko-KR')}원</Cell>
+            <Cell>{member.totalSpend?.toLocaleString('ko-KR')}원</Cell>
           </Row>
         ))}
       </MemberTable>
@@ -330,26 +342,45 @@ function Groups() {
           {loading ? (
             <p>모임 목록을 불러오는 중입니다...</p>
           ) : (
-            allTravelList.slice(0, visibleCount).map(travel => (
-              <Link 
-                key={travel.id} 
-                // --- ⬇️ 수정된 부분 ⬇️ ---
-                to={`/group/${travel.id}/expense`} 
-                // --- ⬆️ 수정된 부분 ⬆️ ---
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <Card 
-                  onMouseEnter={() => handleCardEnter(travel.id)}
-                  onMouseLeave={handleMouseLeave}
+            allTravelList.slice(0, visibleCount).map(travel => {
+              
+              // [수정됨] 이미지 처리 로직
+              // Base64 문자열인지 확인하여 접두어 추가
+              let imageSrc = null;
+              if (travel.image) {
+                if (travel.image.startsWith('http') || travel.image.startsWith('data:')) {
+                  imageSrc = travel.image;
+                } else {
+                  // 순수 Base64 String이 들어오면 포맷 추가
+                  imageSrc = `data:image/jpeg;base64,${travel.image}`;
+                }
+              }
+
+              return (
+                <Link 
+                  key={travel.id}
+                  to={`/expenseredirect?groupId=${travel.id}&groupName=${encodeURIComponent(travel.name)}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
                 >
-                  <ImagePlaceholder>
-                    <span>(이미지 영역)</span>
-                  </ImagePlaceholder>
-                  <h3>{travel.name}</h3>
-                  <p>{travel.description}</p>
-                </Card>
-              </Link>
-            ))
+                  <Card 
+                    onMouseEnter={() => handleCardEnter(travel.id)}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    {/* [수정됨] 이미지가 있으면 CardImage, 없으면 Placeholder */}
+                    {imageSrc ? (
+                      <CardImage src={imageSrc} alt={travel.name} />
+                    ) : (
+                      <ImagePlaceholder>
+                        <span>이미지 없음</span>
+                      </ImagePlaceholder>
+                    )}
+                    
+                    <h3>{travel.name}</h3>
+                    <p>{travel.description}</p>
+                  </Card>
+                </Link>
+              );
+            })
           )}
         </CardList>
         

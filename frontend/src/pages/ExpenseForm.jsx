@@ -7,68 +7,52 @@ import { jwtDecode } from "jwt-decode";
 import { useParams } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
-const mockExpenses = [
-  {
-    id: 1,
-    date: "2025.09.15",
-    name: "편의점",
-    totalAmount: 10000,
-    myAmount: 0,
-    location: "GS25 시부야점",
-    memo: "생수랑 과자 구매함",
-    receiptId: null, // 목업 데이터에 receiptId 필드 추가
-  },
-  {
-    id: 2,
-    date: "2025.09.15",
-    name: "카페",
-    totalAmount: 10000,
-    myAmount: 0,
-    location: "스타벅스 시부야점",
-    memo: "아이스 라떼 마심",
-    receiptId: "r_003", // 테스트용 가짜 ID
-  },
-];
-
 export default function ExpenseForm() {
   const { groupId } = useParams();
+
   const [expenses, setExpenses] = useState([]);
   const [members, setMembers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(3);
-  
-  // 모달 관련 상태
+
+  const [paymentFilter, setPaymentFilter] = useState("CARD");
+  const [groupName, setGroupName] = useState("여행");
+
   const [showModal, setShowModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
-  
-  // [추가] API로 받아온 영수증 이미지를 저장할 상태
   const [receiptImgData, setReceiptImgData] = useState(null);
 
   const [infoMessage, setInfoMessage] = useState("");
 
   const accessToken = localStorage.getItem("accessToken");
-  // user 변수는 현재 사용되지 않으나 디코딩용으로 유지
   const user = accessToken ? jwtDecode(accessToken) : null;
 
-  /** 모임 멤버 + 지출 불러오기 */
+  /** 그룹 정보 + 지출 불러오기 */
   const fetchGroupData = async () => {
     if (!accessToken) {
       setMembers([]);
-      setExpenses(mockExpenses);
+      setExpenses([]); // 목업 제거 → 빈 배열로 설정
+      setGroupName("여행");
       setInfoMessage("로그인 후 실제 지출 내역을 확인할 수 있습니다.");
       return;
     }
 
     try {
+      // 그룹 정보
       const groupRes = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+
       if (!groupRes.ok) throw new Error("그룹 상세 정보 불러오기 실패");
 
       const groupData = await groupRes.json();
       const memberList = groupData?.data?.members ?? [];
-      setMembers(memberList);
+      const name = groupData?.data?.group?.name;
 
+      setMembers(memberList);
+      if (name) setGroupName(name);
+
+      // 지출 정보
       const expenseRes = await fetch(
         `${API_BASE_URL}/groups/${groupId}/expenses`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -87,16 +71,18 @@ export default function ExpenseForm() {
         myAmount: it.myAmount ?? 0,
         location: it.location,
         memo: it.memo ?? "",
-        // [중요] API 응답에서 receiptId를 매핑합니다.
-        receiptId: it.receiptId || null, 
+        payment: it.payment ?? "CARD",
+        receiptId: it.receiptId || null,
       }));
 
-      setExpenses(normalized.length > 0 ? normalized : mockExpenses);
+      setExpenses(normalized);
       setInfoMessage("");
+
     } catch (err) {
       console.error(err);
-      setExpenses(mockExpenses);
+      setExpenses([]); // 목업 제거된 버전 → 빈 배열
       setMembers([]);
+      setGroupName("여행");
       setInfoMessage(err.message);
     }
   };
@@ -106,9 +92,7 @@ export default function ExpenseForm() {
     fetchGroupData();
   }, [groupId]);
 
-  /** * [추가 기능] 영수증 조회 API 호출 함수 
-   * 참고: 업로드된 API 명세서 (GET /receipts/{receiptId})
-   */
+  /** 영수증 이미지 불러오기 */
   const fetchReceiptImage = async (receiptId) => {
     if (!receiptId) {
       alert("등록된 영수증이 없습니다.");
@@ -117,84 +101,72 @@ export default function ExpenseForm() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/receipts/${receiptId}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       const json = await res.json();
 
-      // API 명세서의 실패 응답 처리 (RN, MR, DBE)
-      if (json.code === "RN") {
-        alert("영수증을 찾을 수 없습니다.");
-        return;
-      } else if (json.code === "MR") {
-        alert("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
-        return;
-      } else if (json.code === "DBE") {
-        alert("데이터베이스 오류입니다.");
-        return;
-      }
+      if (json.code === "RN") return alert("영수증을 찾을 수 없습니다.");
+      if (json.code === "MR") return alert("요청이 너무 많습니다.");
+      if (json.code === "DBE") return alert("데이터베이스 오류입니다.");
 
       if (!res.ok) throw new Error(json.message || "영수증 불러오기 실패");
 
-      // 성공 시: data.receipt.image (byte[] 또는 Base64 문자열)
       const imageString = json.data?.receipt?.image;
-      
+
       if (imageString) {
-        // 이미지 데이터가 Base64라고 가정하고 prefix 추가 (상황에 따라 조정 필요)
-        // 만약 API가 순수 URL을 준다면 prefix 없이 setReceiptImgData(imageString) 만 하면 됩니다.
-        const formattedImage = imageString.startsWith("http") 
-          ? imageString 
-          : `data:image/jpeg;base64,${imageString}`;
-          
-        setReceiptImgData(formattedImage);
-        setShowReceiptModal(true); // 데이터 로드 성공 시 모달 오픈
+        const formatted =
+          imageString.startsWith("http")
+            ? imageString
+            : `data:image/jpeg;base64,${imageString}`;
+
+        setReceiptImgData(formatted);
+        setShowReceiptModal(true);
       } else {
-        alert("영수증 이미지 데이터가 비어있습니다.");
+        alert("영수증 이미지가 없습니다.");
       }
-
     } catch (err) {
-      console.error("영수증 조회 에러:", err);
-      alert("영수증을 불러오는 중 오류가 발생했습니다.");
+      console.error(err);
+      alert("영수증 불러오기 오류");
     }
   };
 
-  /** 영수증 아이콘 클릭 핸들러 수정 */
   const handleOpenReceipt = (expense) => {
-    setSelectedExpenseId(expense.id);
-    
-    if (!accessToken) {
-      // 로그인 안 된 상태면 목업 동작(또는 경고)
-      alert("로그인이 필요한 기능입니다.");
-      return;
-    }
-
-    // 영수증 ID가 있는 경우 API 호출
-    if (expense.receiptId) {
-      fetchReceiptImage(expense.receiptId);
-    } else {
-      alert("이 지출 내역에는 등록된 영수증이 없습니다.");
-    }
+    if (!accessToken) return alert("로그인이 필요합니다.");
+    if (expense.receiptId) fetchReceiptImage(expense.receiptId);
+    else alert("등록된 영수증이 없습니다.");
   };
+
+  const filteredExpenses = expenses.filter(
+    (e) => e.payment === paymentFilter
+  );
 
   const handleMore = () => {
-    if (visibleCount >= expenses.length) setVisibleCount(3);
+    if (visibleCount >= filteredExpenses.length) setVisibleCount(3);
     else setVisibleCount((prev) => prev + 3);
   };
 
   return (
     <Wrapper>
-      <Title>태국 여행</Title>
+      <Title>{groupName}</Title>
 
       <TopRow>
-        <Select>
-          <option>카드</option>
-          <option>현금</option>
-        </Select>
-        <AddButton onClick={() => setShowModal(true)}>+ 추가하기</AddButton>
+        <FilterButtonGroup>
+          <FilterButton
+            active={paymentFilter === "CARD"}
+            onClick={() => setPaymentFilter("CARD")}
+          >
+            카드
+          </FilterButton>
+          <FilterButton
+            active={paymentFilter === "CASH"}
+            onClick={() => setPaymentFilter("CASH")}
+          >
+            현금
+          </FilterButton>
+        </FilterButtonGroup>
+
+        <AddButton onClick={() => setShowModal(true)}>추가하기</AddButton>
       </TopRow>
 
       {infoMessage && <InfoMessage>{infoMessage}</InfoMessage>}
@@ -211,7 +183,7 @@ export default function ExpenseForm() {
         </HeaderRow>
 
         <ScrollBody>
-          {expenses.slice(0, visibleCount).map((e) => (
+          {filteredExpenses.slice(0, visibleCount).map((e) => (
             <TooltipWrapper key={e.id}>
               <DataRow>
                 <CheckBox type="checkbox" />
@@ -220,18 +192,18 @@ export default function ExpenseForm() {
                 <Cell>{e.totalAmount.toLocaleString()}원</Cell>
                 <Cell>{e.myAmount.toLocaleString()}원</Cell>
                 <Cell>{e.location}</Cell>
-                {/* 수정된 핸들러 연결 */}
                 <ReceiptIcon onClick={() => handleOpenReceipt(e)}>📄</ReceiptIcon>
               </DataRow>
+
               {e.memo && <Tooltip>{e.memo}</Tooltip>}
             </TooltipWrapper>
           ))}
         </ScrollBody>
       </TableBox>
 
-      {expenses.length > 3 && (
+      {filteredExpenses.length > 3 && (
         <MoreButton onClick={handleMore}>
-          {visibleCount >= expenses.length ? "접기" : "더보기"}
+          {visibleCount >= filteredExpenses.length ? "접기" : "더보기"}
         </MoreButton>
       )}
 
@@ -246,22 +218,19 @@ export default function ExpenseForm() {
               setShowModal(false);
               fetchGroupData();
             }}
-            onSuccess={fetchGroupData}
+            refresh={fetchGroupData}
           />
         </ModalOverlay>
       )}
 
       {showReceiptModal && (
         <ModalOverlay>
-          {/* ReceiptModal에 API로 받아온 이미지 데이터를 전달합니다.
-            ReceiptModal 컴포넌트 내부에서 <img src={props.receiptImgData} /> 처럼 사용해야 합니다.
-          */}
           <ReceiptModal
             expenseId={selectedExpenseId}
-            receiptImgData={receiptImgData} 
+            receiptImgData={receiptImgData}
             onClose={() => {
               setShowReceiptModal(false);
-              setReceiptImgData(null); // 닫을 때 이미지 초기화
+              setReceiptImgData(null);
             }}
           />
         </ModalOverlay>
@@ -270,15 +239,16 @@ export default function ExpenseForm() {
   );
 }
 
-/* -------------------- Styled (변경 없음) -------------------- */
 const Wrapper = styled.div`
   padding: 30px 40px;
-  @media (max-width: 780px) { padding: 20px; }
+  @media (max-width: 780px) {
+    padding: 20px;
+  }
 `;
 const Title = styled.h1`
   text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
+  margin-top: 50px;
+  font-size: 30px;
 `;
 const TopRow = styled.div`
   display: flex;
@@ -295,8 +265,8 @@ const AddButton = styled.button`
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
-  font-weight: bold;
   cursor: pointer;
+  font-weight: normal;
 `;
 const TableBox = styled.div`
   width: 100%;
@@ -311,7 +281,7 @@ const HeaderRow = styled.div`
   background: #226cff;
   color: white;
   padding: 12px;
-  font-weight: bold;
+  font-weight: normal;
   font-size: 14px;
 `;
 const ScrollBody = styled.div`
@@ -350,9 +320,18 @@ const DataRow = styled.div`
   padding: 14px 12px;
   border-bottom: 1px solid #f3f3f3;
 `;
-const Cell = styled.div`font-weight: 600;`;
-const CheckBox = styled.input`transform: scale(0.8); cursor:pointer;`;
-const ReceiptIcon = styled.div`font-size: 20px; text-align:center; cursor:pointer;`;
+const Cell = styled.div`
+  font-weight: 600;
+`;
+const CheckBox = styled.input`
+  transform: scale(0.8);
+  cursor: pointer;
+`;
+const ReceiptIcon = styled.div`
+  font-size: 20px;
+  text-align: center;
+  cursor: pointer;
+`;
 const MoreButton = styled.button`
   margin: 20px auto 8px;
   display: block;
@@ -362,7 +341,7 @@ const MoreButton = styled.button`
   border: none;
   padding: 10px;
   border-radius: 10px;
-  font-weight: bold;
+  font-weight: normal;
 `;
 const Hint = styled.div`
   text-align: center;
@@ -370,14 +349,42 @@ const Hint = styled.div`
   color: #888;
 `;
 const ModalOverlay = styled.div`
-  position: fixed; inset:0;
-  background: rgba(0,0,0,0.35);
-  display:flex; justify-content:center; align-items:center;
-  z-index:9999;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 `;
 const InfoMessage = styled.p`
   text-align: center;
   color: #dc3545;
   margin-bottom: 10px;
-  font-weight: bold;
+  font-weight: normal;
+`;
+
+const FilterButtonGroup = styled.div`
+  display: flex;
+  background: #e7f0ff;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+  height: fit-content;
+`;
+
+const FilterButton = styled.button`
+  background: ${(props) => (props.active ? "#226cff" : "transparent")};
+  color: ${(props) => (props.active ? "white" : "#226cff")};
+  border: none;
+  padding: 9px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${(props) => (props.active ? "#1a5be6" : "#d0e2ff")};
+  }
 `;

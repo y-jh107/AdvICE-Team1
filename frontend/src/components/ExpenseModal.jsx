@@ -3,11 +3,10 @@ import styled from "styled-components";
 import axios from "axios";
 import Button from "./Button";
 import ReceiptModal from "./ReceiptModal";
-// [체크] 파일 이름이 실제 파일명(ExchangeRateModal.jsx)과 일치해야 합니다.
-import ExchangeRateModal from "./ExchangeRateModal"; 
+import ExchangeRateModal from "./ExchangeRateModal"; // 그래프 모달
 import { API_BASE_URL } from "../config";
 
-// [1] UUID 생성 (Idempotency)
+// [1] UUID 생성 (중복 방지 키)
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -16,14 +15,13 @@ const generateUUID = () => {
   });
 };
 
-// [2] [수정됨] API 명세서 예시(ISO 8601)에 완벽히 맞춘 날짜 포맷
+// [2] 오늘 날짜 (YYYY-MM-DD)
 const getTodayISO = () => {
   const d = new Date();
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  // 명세서에 나온 시간 포맷(T12:00:00+09:00)을 그대로 준수
-  return `${year}-${month}-${day}T12:00:00+09:00`;
+  return `${year}-${month}-${day}`; 
 };
 
 export default function ExpenseModal({ groupId, members = [], onClose, onSuccess }) {
@@ -32,20 +30,22 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [name, setName] = useState("");
   const [spentAt, setSpentAt] = useState("");
   
+  // amount: 사용자가 입력하는 금액 (외화일 수 있음)
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const [payment, setPayment] = useState("CARD");
   
+  // 통화 및 환율
   const [currency, setCurrency] = useState("KRW");
   const [currentRate, setCurrentRate] = useState(1); 
 
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
+  // 모달 상태
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [tempReceiptFile, setTempReceiptFile] = useState(null);
-  
   const [showExchangeModal, setShowExchangeModal] = useState(false);
 
   useEffect(() => {
@@ -57,34 +57,32 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers(obj);
   }, [members]);
 
-  // 환율 조회 로직
+  // [핵심] 환율 조회 (API 배열 응답 처리)
   useEffect(() => {
     if (currency === "KRW") {
       setCurrentRate(1);
       return;
     }
+
     const fetchRate = async () => {
       try {
-        // [수정됨] getTodayISO() 함수가 ISO 포맷으로 날짜를 보냅니다.
         const res = await axios.get(`${API_BASE_URL}/api/fx`, {
           params: { date: getTodayISO(), base: "KRW", symbols: currency }
         });
         
-        const rateData = res.data.data?.rates?.[currency];
-        let rateNum = 1;
+        // 응답: { code: "SU", data: [ {date: "2025-11-XX", rate: 1390.5}, ... ] }
+        const list = res.data.data;
 
-        if (rateData) {
-           const rateStr = rateData.dealbase || "0";
-           rateNum = parseFloat(rateStr.replace(/,/g, ""));
+        if (list && list.length > 0) {
+          // 가장 최근 데이터 사용 (배열의 마지막 요소)
+          const latestData = list[list.length - 1];
+          const rateNum = latestData.rate;
 
-           // JPY(100) 등 단위 처리
-           if (rateData.unit && rateData.unit.includes("100")) {
-             rateNum = rateNum / 100;
-           }
+          if (rateNum > 0) setCurrentRate(rateNum);
+          else setCurrentRate(1);
+        } else {
+          setCurrentRate(1); // 데이터 없음
         }
-
-        if (rateNum > 0) setCurrentRate(rateNum);
-        else setCurrentRate(1); 
       } catch (err) {
         console.error("환율 조회 실패", err);
         setCurrentRate(1); 
@@ -93,6 +91,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     fetchRate();
   }, [currency]);
 
+  // 멤버 분배 로직
   const toggleMember = (id, checked) => {
     setSelectedMembers((prev) => ({
       ...prev, [id]: { ...prev[id], selected: checked }
@@ -118,10 +117,12 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     return sum === 100;
   };
 
+  // [저장] 외화 -> 원화 변환 후 전송
   const save = async () => {
     if (!name || !spentAt || !amount) return alert("필수 정보를 입력해주세요.");
     if (!validatePercent()) return alert("참여자 퍼센트 합계는 100이어야 합니다.");
 
+    // 원화 환산 (소수점 버림)
     const finalAmountKRW = Math.floor(Number(amount) * currentRate);
 
     const participants = Object.entries(selectedMembers)
@@ -130,17 +131,18 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const body = {
       name, spentAt, 
-      amount: finalAmountKRW,
+      amount: finalAmountKRW, // 원화 금액 전송
       payment, location, memo, splitMode, participants,
-      currency: "KRW"
+      currency: "KRW" 
     };
 
     try {
       if (!accessToken) {
-        alert(`[테스트 모드 저장] ${finalAmountKRW.toLocaleString()}원`);
+        alert(`[테스트 저장]\n입력: ${amount} ${currency}\n환율: ${currentRate}\n저장액: ${finalAmountKRW.toLocaleString()}원`);
         onSuccess?.(); onClose(); return;
       }
 
+      // 1. 지출 생성
       const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -151,6 +153,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
       const newExpenseId = json.data?.expenseId || json.data?.id;
 
+      // 2. 영수증 업로드 (있을 경우)
       if (newExpenseId && tempReceiptFile) {
         const formData = new FormData();
         formData.append("image", tempReceiptFile);
@@ -193,6 +196,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
               <input type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} />
             </InputGroup>
 
+            {/* 금액 및 통화 선택 */}
             <InputGroup>
               <label>금액 {currency !== "KRW" && "(현지 통화)"}</label>
               <CurrencyContainer>
@@ -219,6 +223,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
                 </CurrencySelect>
               </CurrencyContainer>
 
+              {/* 환율 미리보기 */}
               {currency !== "KRW" && amount && (
                 <ConversionPreview>
                   ≈ {(Math.floor(Number(amount) * currentRate)).toLocaleString()}원 
@@ -229,13 +234,20 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
             <InputGroup>
               <label>결제 방식</label>
-              <RoundedSelect value={payment} onChange={(e) => setPayment(e.target.value)}>
-                <option value="CARD">카드</option>
-                <option value="CASH">현금</option>
-              </RoundedSelect>
-            </InputGroup>
-
-            <InputGroup>
+              <PaymentButtonGroup>
+                <PaymentButton
+                  active={payment === "CARD"}
+                  onClick={() => setPayment("CARD")}
+                >
+                  카드
+                </PaymentButton>
+                <PaymentButton
+                  active={payment === "CASH"}
+                  onClick={() => setPayment("CASH")}
+                >
+                  현금
+                </PaymentButton>
+              </PaymentButtonGroup>
               <label>장소</label>
               <input type="text" placeholder="예: 야시장" value={location} onChange={(e) => setLocation(e.target.value)} />
             </InputGroup>
@@ -265,7 +277,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           </ScrollableArea>
 
           <ModalFooter>
-            {/* 환율 그래프 버튼 */}
+            {/* [상단] 환율 그래프 버튼 (꽉 찬 너비) */}
             {currency !== "KRW" && (
               <WhiteButton 
                 onClick={() => setShowExchangeModal(true)} 
@@ -275,6 +287,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
               </WhiteButton>
             )}
 
+            {/* [하단] 저장 & 영수증 버튼 (가로 배치) */}
             <ButtonRow>
               <Button text="저장" onClick={save} />
               <WhiteButton onClick={() => setShowReceiptModal(true)} isSelected={!!tempReceiptFile}>
@@ -285,6 +298,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         </ModalContent>
       </ModalOverlay>
 
+      {/* 영수증 모달 */}
       {showReceiptModal && (
         <ReceiptModal 
           isOpen={true} onClose={() => setShowReceiptModal(false)}
@@ -292,6 +306,8 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           receiptImgData={tempReceiptFile ? URL.createObjectURL(tempReceiptFile) : null}
         />
       )}
+      
+      {/* 환율 그래프 모달 */}
       <ExchangeRateModal 
         isOpen={showExchangeModal} onClose={() => setShowExchangeModal(false)}
         currency={currency} 
@@ -300,23 +316,21 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   );
 }
 
-// --- 스타일 정의 ---
+// --- Styled Components ---
 const ModalOverlay = styled.div` position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000; `;
 const ModalContent = styled.div` background-color:white; width:90%; max-width:430px; border-radius:8px; overflow:hidden; max-height:90vh; display:flex; flex-direction:column; `;
-const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:bold; cursor:pointer; } `;
+const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:normal; cursor:pointer; } `;
 const ScrollableArea = styled.div` padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem; `;
 const ModalFooter = styled.div` padding: 1rem 1.5rem 1.5rem; display: flex; flex-direction: column; `;
 
 const ButtonRow = styled.div` 
-  display: flex; 
-  gap: 10px; 
-  width: 100%; 
+  display: flex; gap: 10px; width: 100%; 
   & > * { flex: 1; width: auto; } 
 `;
 
 const InputGroup = styled.div`
   display:flex; flex-direction:column;
-  label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;}
+  label{font-size:0.9rem;font-weight:300;margin-bottom:0.5rem;}
   input[type="date"], input[type="text"]:not(:first-child), textarea {
     font-size:1rem; padding:0.75rem; border:1px solid #ccc; border-radius:6px;
   }
@@ -324,20 +338,45 @@ const InputGroup = styled.div`
 
 const CurrencyContainer = styled.div` display: flex; gap: 10px; align-items: center; `;
 const CurrencyInputWrapper = styled.div` position: relative; flex: 1; `;
-const CurrencyInput = styled.input` width: 100%; padding: 0.75rem 2.5rem 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; box-sizing: border-box; &::placeholder { color: #999; } &:focus { outline: none; border-color: #3b82f6; } `;
+const CurrencyInput = styled.input` width: 100%; padding: 0.75rem 2.5rem 0.75rem 1rem; border: 1px solid #ccc; border-radius: 15px; font-size: 1rem; box-sizing: border-box; &::placeholder { color: #999; } &:focus { outline: none; border-color: #3b82f6; } `;
 const ResetButton = styled.button` position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 0; line-height: 1; `;
 const CurrencySelect = styled.select` padding: 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; min-width: 100px; cursor: pointer; &:focus { outline: none; border-color: #3b82f6; } `;
-const RoundedSelect = styled.select` width: 100%; padding: 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; background-color: white; cursor: pointer; box-sizing: border-box; &:focus { outline: none; border-color: #3b82f6; } `;
 
 const ConversionPreview = styled.div`
-  margin-top: 8px; font-size: 0.95rem; color: #2563eb; font-weight: bold; text-align: right;
+  margin-top: 8px; font-size: 0.95rem; color: #2563eb; font-weight: normal; text-align: right;
   .rateInfo { font-size: 0.8rem; color: #888; font-weight: normal; }
 `;
 
 const Divider = styled.div` height:1px; background-color:#ddd; margin:0.5rem 0; `;
 const SectionTitle = styled.h4` margin-top:0.5rem;font-size:1rem;font-weight:600; `;
-const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:bold;} `;
+const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:normal;} `;
 const PercentInput = styled.input` width:60px;padding:6px;border-radius:6px;border:1px solid #ddd; `;
-const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:bold; `;
+const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:normal; `;
 const EqualRow = styled.div` margin-top:6px; display:flex; gap:8px; `;
-const WhiteButton = styled.button` width: 100%; padding: 10px 20px; background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; &:hover { background-color: #f0f7ff; } `;
+const WhiteButton = styled.button` width: 100%; padding: 10px 20px; background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-size: 16px; font-weight: normal; cursor: pointer; transition: all 0.2s; &:hover { background-color: #f0f7ff; } `;
+
+const PaymentButtonGroup = styled.div`
+  display: flex;
+  background: #f8f9ff;
+  border: 1.5px solid #e2e8ff;
+  border-radius: 16px;
+  padding: 6px;
+  gap: 6px;
+`;
+
+const PaymentButton = styled.button`
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 300;
+  background: ${(props) => (props.active ? "#226cff" : "transparent")};
+  color: ${(props) => (props.active ? "white" : "#444")};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${(props) => (props.active ? "#1a5be6" : "#eef1ff")};
+  }
+`;
