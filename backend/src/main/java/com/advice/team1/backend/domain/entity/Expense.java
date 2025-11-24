@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -25,7 +26,7 @@ public class Expense {
     private String location;
 
     @Column(name="spent_at")
-    private Date spentAt;
+    private LocalDate spentAt;
     private String currency;
 
     @Column(name="split_mode")

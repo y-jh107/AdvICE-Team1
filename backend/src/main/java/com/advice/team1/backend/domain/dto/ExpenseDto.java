@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 
 @Data
 @Getter
@@ -18,7 +18,7 @@ public class ExpenseDto {
     private String payment;
     private String location;
 
-    private Date spentAt;
+    private LocalDate spentAt;
     private String currency;
     private String splitMode;
 
