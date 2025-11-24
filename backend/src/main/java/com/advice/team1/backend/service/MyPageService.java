@@ -1,7 +1,6 @@
 package com.advice.team1.backend.service;
 
 import com.advice.team1.backend.domain.dto.*;
-import com.advice.team1.backend.domain.entity.GroupMember;
 import com.advice.team1.backend.domain.entity.User;
 import com.advice.team1.backend.repository.ExpenseRepository;
 import com.advice.team1.backend.repository.GroupMemberRepository;
@@ -43,20 +42,27 @@ public class MyPageService {
         User user = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        List<GroupMember> groups = groupMemberRepository.findByUser_Id(user.getId());
+        List<MyPageGroupListDto> groups = user.getGroups().stream()
+                .map(gm -> new MyPageGroupListDto(
+                        gm.getGroup().getId(),
+                        gm.getGroup().getName()
+                ))
+                .toList();
 
-        Range range = normalizeRange(from, to);
+        LocalDate now = LocalDate.now();
+        LocalDate oneWeekAgo = now.minusDays(30);
 
-        List<ExpensesByDateItemDto> items = expenseRepository.expensesByDate(targetUserId, range.from, range.to)
+        List<ExpensesByDateItemDto> items = expenseRepository
+                .expensesByDate(targetUserId, oneWeekAgo, now)
                 .stream()
-                .map(r -> new ExpensesByDateItemDto(
-                        (r[0] instanceof Date d) ? d.toLocalDate() : (LocalDate) r[0],
-                        (r[1] instanceof BigDecimal b) ? b : new BigDecimal(r[1].toString())
+                .map(p -> new ExpensesByDateItemDto(
+                        p.getD(),
+                        p.getTotal()
                 ))
                 .toList();
 
         MyPageUserDto myPageUserDto = new MyPageUserDto(
-                Long.valueOf(user.getId()),
+                user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getPhone()
@@ -68,27 +74,4 @@ public class MyPageService {
                 new ExpensesByDateDto(items)
         );
     }
-
-    /*
-    * 지출 조회 기간 설정 메서드
-    * from: 입력값 없다면 현재 날짜로부터 일주일 전
-    * to: 입력값 없다면 현재 날짜
-    * */
-    private Range  normalizeRange(Instant from, Instant to) {
-        ZoneId zone = ZoneOffset.UTC;
-
-        Instant defaultEnd = LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant();
-        Instant defaultStart = defaultEnd.minus(Duration.ofDays(7));
-
-        Instant start = (from != null) ? from : defaultStart;
-        Instant end = (to != null) ? to : defaultEnd;
-
-        if (start.isAfter(end)) {
-            end = start.plus(Duration.ofDays(7));
-        }
-
-        return new Range(start, end);
-    }
-
-    private record Range(Instant from, Instant to) {}
 }
