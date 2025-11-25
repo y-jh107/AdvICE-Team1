@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "../components/Button"; // 공용 버튼 컴포넌트
+import Header from "../components/Header"; // [복구됨] 공용 Header 컴포넌트
 import ExchangeRateModal from "../components/ExchangeRateModal"; 
 
 // --- Styled Components ---
@@ -18,6 +19,7 @@ const MainContent = styled.main`
   width: 90rem;
   max-width: 80rem;
   margin: 0 auto;
+  /* Header 높이를 고려하여 padding-top 설정 (기존 유지) */
   padding: 8rem 0rem 3rem 0rem; 
   box-sizing: border-box;
 
@@ -56,7 +58,7 @@ const Card = styled.div`
   border-radius: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   display: flex;
-  flex-direction: column; /* 카드 내부 요소 세로 정렬 */
+  flex-direction: column;
 `;
 
 const ProfileInfo = styled(Card)``;
@@ -93,7 +95,7 @@ const ListCard = styled(Card)`
     list-style: none;
     padding: 0;
     margin: 0 0 2rem 0;
-    flex-grow: 1; /* 리스트가 공간을 차지하도록 설정 */
+    flex-grow: 1;
   }
   li {
     padding: 0.75rem 0;
@@ -105,7 +107,7 @@ const ListCard = styled(Card)`
   }
   & > button, & > a {
     width: 100%;
-    margin-top: auto; /* 버튼을 항상 하단으로 밀어냄 */
+    margin-top: auto;
   }
 `;
 
@@ -227,6 +229,9 @@ function Mypage() {
 
   return (
     <PageWrapper>
+      {/* [복구됨] 헤더 컴포넌트 추가 */}
+      <Header />
+
       <MainContent>
         {error && (
           <div style={{ color: "red", textAlign: "center", marginBottom: "1rem" }}>
@@ -236,7 +241,7 @@ function Mypage() {
 
         <PageTitle>마이페이지</PageTitle>
         
-        {/* 상단: 프로필 + 여행 목록(위치 이동됨) */}
+        {/* 상단: 프로필 + 여행 목록 */}
         <ContentGrid>
           <ProfileInfo>
             <InfoField>
@@ -257,7 +262,6 @@ function Mypage() {
             </InfoField>
           </ProfileInfo>
 
-          {/* [변경됨] 원래 아래에 있던 여행 목록을 위로 이동 */}
           <ListCard>
             <h3>내 여행 목록</h3>
             <ul>
@@ -269,7 +273,7 @@ function Mypage() {
           </ListCard>
         </ContentGrid>
 
-        {/* 하단: 지출 목록 + 환율 계산기(위치 이동됨) */}
+        {/* 하단: 지출 목록 + 환율 계산기 */}
         <DashboardGrid>
           <ListCard>
             <h3>일일 내 지출액</h3>
@@ -282,7 +286,6 @@ function Mypage() {
             </ul>
           </ListCard>
           
-          {/* [변경됨] 원래 위에 있던 환율 패널을 아래로 이동 */}
           <ExchangePanel>
             <h3>환율 계산기</h3>
             
