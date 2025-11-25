@@ -15,7 +15,7 @@ const generateUUID = () => {
   });
 };
 
-// [2] 오늘 날짜 (YYYY-MM-DD)
+// [2] 오늘 날짜 (YYYY-MM-DD) - API 요청용
 const getTodayISO = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -57,7 +57,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers(obj);
   }, [members]);
 
-  // [핵심] 환율 조회 (API 배열 응답 처리)
+  // [핵심] 환율 조회 (경로 수정됨: /fx)
   useEffect(() => {
     if (currency === "KRW") {
       setCurrentRate(1);
@@ -66,7 +66,8 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const fetchRate = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/fx`, {
+        // [수정] /api/fx -> /fx (BASE_URL에 /api가 포함되어 있으므로)
+        const res = await axios.get(`${API_BASE_URL}/fx`, {
           params: { date: getTodayISO(), base: "KRW", symbols: currency }
         });
         
@@ -234,20 +235,13 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
             <InputGroup>
               <label>결제 방식</label>
-              <PaymentButtonGroup>
-                <PaymentButton
-                  active={payment === "CARD"}
-                  onClick={() => setPayment("CARD")}
-                >
-                  카드
-                </PaymentButton>
-                <PaymentButton
-                  active={payment === "CASH"}
-                  onClick={() => setPayment("CASH")}
-                >
-                  현금
-                </PaymentButton>
-              </PaymentButtonGroup>
+              <RoundedSelect value={payment} onChange={(e) => setPayment(e.target.value)}>
+                <option value="CARD">카드</option>
+                <option value="CASH">현금</option>
+              </RoundedSelect>
+            </InputGroup>
+
+            <InputGroup>
               <label>장소</label>
               <input type="text" placeholder="예: 야시장" value={location} onChange={(e) => setLocation(e.target.value)} />
             </InputGroup>
@@ -319,7 +313,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 // --- Styled Components ---
 const ModalOverlay = styled.div` position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000; `;
 const ModalContent = styled.div` background-color:white; width:90%; max-width:430px; border-radius:8px; overflow:hidden; max-height:90vh; display:flex; flex-direction:column; `;
-const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:normal; cursor:pointer; } `;
+const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; button { background:none; border:none; color:white; font-size:1.2rem; font-weight:bold; cursor:pointer; } `;
 const ScrollableArea = styled.div` padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem; `;
 const ModalFooter = styled.div` padding: 1rem 1.5rem 1.5rem; display: flex; flex-direction: column; `;
 
@@ -330,7 +324,7 @@ const ButtonRow = styled.div`
 
 const InputGroup = styled.div`
   display:flex; flex-direction:column;
-  label{font-size:0.9rem;font-weight:300;margin-bottom:0.5rem;}
+  label{font-size:0.9rem;font-weight:500;margin-bottom:0.5rem;}
   input[type="date"], input[type="text"]:not(:first-child), textarea {
     font-size:1rem; padding:0.75rem; border:1px solid #ccc; border-radius:6px;
   }
@@ -338,45 +332,21 @@ const InputGroup = styled.div`
 
 const CurrencyContainer = styled.div` display: flex; gap: 10px; align-items: center; `;
 const CurrencyInputWrapper = styled.div` position: relative; flex: 1; `;
-const CurrencyInput = styled.input` width: 100%; padding: 0.75rem 2.5rem 0.75rem 1rem; border: 1px solid #ccc; border-radius: 15px; font-size: 1rem; box-sizing: border-box; &::placeholder { color: #999; } &:focus { outline: none; border-color: #3b82f6; } `;
+// 둥근 금액 입력창
+const CurrencyInput = styled.input` width: 100%; padding: 0.75rem 2.5rem 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; box-sizing: border-box; &::placeholder { color: #999; } &:focus { outline: none; border-color: #3b82f6; } `;
 const ResetButton = styled.button` position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 0; line-height: 1; `;
 const CurrencySelect = styled.select` padding: 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; min-width: 100px; cursor: pointer; &:focus { outline: none; border-color: #3b82f6; } `;
+const RoundedSelect = styled.select` width: 100%; padding: 0.75rem 1rem; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; background-color: white; cursor: pointer; box-sizing: border-box; &:focus { outline: none; border-color: #3b82f6; } `;
 
 const ConversionPreview = styled.div`
-  margin-top: 8px; font-size: 0.95rem; color: #2563eb; font-weight: normal; text-align: right;
+  margin-top: 8px; font-size: 0.95rem; color: #2563eb; font-weight: bold; text-align: right;
   .rateInfo { font-size: 0.8rem; color: #888; font-weight: normal; }
 `;
 
 const Divider = styled.div` height:1px; background-color:#ddd; margin:0.5rem 0; `;
 const SectionTitle = styled.h4` margin-top:0.5rem;font-size:1rem;font-weight:600; `;
-const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:normal;} `;
+const MemberRow = styled.div` display:flex; align-items:center; gap:10px; .name{flex:1; font-weight:bold;} `;
 const PercentInput = styled.input` width:60px;padding:6px;border-radius:6px;border:1px solid #ddd; `;
-const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:normal; `;
+const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:6px;font-weight:bold; `;
 const EqualRow = styled.div` margin-top:6px; display:flex; gap:8px; `;
-const WhiteButton = styled.button` width: 100%; padding: 10px 20px; background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-size: 16px; font-weight: normal; cursor: pointer; transition: all 0.2s; &:hover { background-color: #f0f7ff; } `;
-
-const PaymentButtonGroup = styled.div`
-  display: flex;
-  background: #f8f9ff;
-  border: 1.5px solid #e2e8ff;
-  border-radius: 16px;
-  padding: 6px;
-  gap: 6px;
-`;
-
-const PaymentButton = styled.button`
-  flex: 1;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 300;
-  background: ${(props) => (props.active ? "#226cff" : "transparent")};
-  color: ${(props) => (props.active ? "white" : "#444")};
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${(props) => (props.active ? "#1a5be6" : "#eef1ff")};
-  }
-`;
+const WhiteButton = styled.button` width: 100%; padding: 10px 20px; background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; &:hover { background-color: #f0f7ff; } `;

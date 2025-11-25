@@ -34,8 +34,8 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
     setError(null);
     
     try {
-      // 배열 데이터 한 번에 요청
-      const res = await axios.get(`${API_BASE_URL}/api/fx`, {
+      // [수정] /api/fx -> /fx
+      const res = await axios.get(`${API_BASE_URL}/fx`, {
         params: {
           date: getTodayISO(),
           base: "KRW",
