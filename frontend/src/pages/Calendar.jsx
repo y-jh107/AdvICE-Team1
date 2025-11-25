@@ -131,7 +131,8 @@ function Calendar() {
   const [schedules, setSchedules] = useState({});
 
   // =========================================================
-  // 1. [API GET] 월별 일정 조회 (수정: /group 단수형, /api 없음)
+  // 1. [API GET] 월별 일정 조회
+  // [규칙] URL: /group/{groupId}/calendar (단수형 group, api 없음)
   // =========================================================
   useEffect(() => {
     if (!groupId) return;
@@ -139,12 +140,11 @@ function Calendar() {
     const fetchSchedules = async () => {
       const accessToken = localStorage.getItem("accessToken");
       try {
-        // [경로 확인]: /group/{groupId}/calendar
         const response = await fetch(`${API_BASE_URL}/group/${groupId}/calendar`, {
           method: "GET",
           headers: { 
             "Authorization": `Bearer ${accessToken}`,
-            // "Accept": "application/json" // 필요 시 추가
+            // "Accept": "application/json" 
           },
         });
 
@@ -158,12 +158,14 @@ function Calendar() {
 
           list.forEach((item) => {
             const itemDate = new Date(item.date);
+            // 현재 보고 있는 달력의 연/월과 일치하는 데이터만 필터링
             if (itemDate.getFullYear() === currentYear && itemDate.getMonth() === currentMonth) {
               const day = itemDate.getDate();
               if (!newSchedules[day]) newSchedules[day] = [];
               
               newSchedules[day].push({
-                id: item.id,
+                // 서버에서 주는 ID (eventId 혹은 expenseId일 수 있으나 목록에선 보통 id로 통일됨)
+                id: item.id, 
                 title: item.name,
                 type: item.type,
                 date: item.date,
@@ -183,7 +185,8 @@ function Calendar() {
   }, [currentDate, groupId]);
 
   // =========================================================
-  // 2. [API POST] 일정 등록 (수정: /api/groups 복수형)
+  // 2. [API POST] 일정 등록
+  // [규칙] URL: /api/groups/{groupId}/calendar/event (복수형 groups, api 포함)
   // =========================================================
   const handleSave = async () => {
     if (!scheduleInput || !dateInput || !timeInput) {
@@ -196,7 +199,6 @@ function Calendar() {
     const formattedDate = `${dateInput}T${timeInput}:00+09:00`;
 
     try {
-      // [경로 확인]: /api/groups/{groupId}/calendar/event
       const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/calendar/event`, {
         method: "POST",
         headers: {
@@ -216,15 +218,18 @@ function Calendar() {
         const newEvent = json.data;
         const eventDate = new Date(newEvent.date);
         
+        // [중요] eventId를 내부 id로 매핑
+        const newId = newEvent.eventId; 
+
         // 현재 달력 화면 갱신
         if (eventDate.getMonth() === currentDate.getMonth() && eventDate.getFullYear() === currentDate.getFullYear()) {
             const day = eventDate.getDate();
             setSchedules((prev) => ({
                 ...prev,
                 [day]: [...(prev[day] || []), {
-                    id: newEvent.eventId,
+                    id: newId, 
                     title: newEvent.name,
-                    type: 'event',
+                    type: 'event', // 등록은 항상 event
                     date: newEvent.date,
                     color: SCHEDULE_COLORS.event,
                 }]
@@ -245,7 +250,8 @@ function Calendar() {
   };
   
   // =========================================================
-  // 3. [API GET] 상세 조회 (유지: /api/groups 복수형)
+  // 3. [API GET] 상세 조회
+  // [규칙] URL: /api/groups/{groupId}/calendar/{type}/{id} (복수형 groups, api 포함)
   // =========================================================
   const handleEventClick = async (schedule) => {
     if (!groupId) return;
@@ -254,9 +260,11 @@ function Calendar() {
     setSelectedDetail(null);
 
     const accessToken = localStorage.getItem("accessToken");
+    
+    // schedule.type이 'expense'이면 'expense', 아니면 'event'
     const endpointType = schedule.type === 'expense' ? 'expense' : 'event';
     
-    // [경로 확인]: /api/groups/{groupId}/calendar/{type}/{id}
+    // endpointType 덕분에 ID가 숫자 1, 1로 같아도 경로가 달라서 문제 없음
     const url = `${API_BASE_URL}/api/groups/${groupId}/calendar/${endpointType}/${schedule.id}`;
 
     try {
@@ -348,7 +356,8 @@ function Calendar() {
               {dateInfo.isCurrentMonth &&
                 schedules[dateInfo.day]?.map((schedule) => (
                   <ScheduleItem 
-                    key={schedule.id} 
+                    // [핵심] ID 중복 오류 방지를 위한 Key 설정 (type + id 조합)
+                    key={`${schedule.type}-${schedule.id}`} 
                     $bgColor={schedule.color}
                     onClick={() => handleEventClick(schedule)}
                   >
@@ -361,6 +370,7 @@ function Calendar() {
       </MainContent>
       <Footer />
 
+      {/* 일정 추가 모달 */}
       {isAddModalOpen && (
         <ModalOverlay onClick={handleCloseAddModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -397,6 +407,7 @@ function Calendar() {
         </ModalOverlay>
       )}
       
+      {/* 일정 상세 모달 */}
       {isDetailModalOpen && (
         <ModalOverlay onClick={() => setIsDetailModalOpen(false)}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -409,9 +420,11 @@ function Calendar() {
                 <>
                   <DetailText><span>이름:</span> {selectedDetail.name}</DetailText>
                   <DetailText><span>일시:</span> {formatDateTime(selectedDetail.date)}</DetailText>
+                  {/* 여행 일정일 때 */}
                   {selectedDetail.location && (
                     <DetailText><span>장소:</span> {selectedDetail.location}</DetailText>
                   )}
+                  {/* 지출 항목일 때 */}
                   {selectedDetail.amount !== undefined && (
                     <DetailText><span>금액:</span> {selectedDetail.amount.toLocaleString()}원</DetailText>
                   )}
