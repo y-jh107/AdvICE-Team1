@@ -132,9 +132,15 @@ export default function ExpenseRedirect() {
     navigate(`/group/${groupId}/expense`);
   };
 
-  const goToCalendar = () => {
-    navigate("/calendar");
-  };
+  //수정함
+ const goToCalendar = () => {
+  // 안전장치: 혹시라도 ID가 없으면 경고
+  if (!groupId) return alert("모임 정보가 없습니다.");
+  
+  // ✅ 쿼리 파라미터로 groupId를 함께 전달
+  navigate(`/calendar?groupId=${groupId}`); 
+};
+//수정끝
 
   return (
     <Container>
@@ -164,7 +170,7 @@ export default function ExpenseRedirect() {
           </IconWrapper>
           <ButtonText>캘린더로 이동하기</ButtonText>
         </ActionButton>
-      </ButtonGrid>
+      </ButtonGrid> 
     </Container>
   );
 }
