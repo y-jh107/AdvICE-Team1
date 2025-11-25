@@ -36,12 +36,12 @@ function AppWrapper() {
         <Route path="/groups" element={<Groups />} />
         <Route path="/groupcreate" element={<GroupCreate />} />
 
-        {/* 📝 추후 모임 수정 기능 추가 시 사용할 예정 */}
+        {/* 추후 모임 수정 기능 추가 시 사용할 예정 */}
         {/* <Route path="/groups/edit/:id" element={<GroupEdit />} /> */}
 
 
         <Route path="/calendar" element={<Calendar />} />
-        <Route path="/group/:groupId/expense" element={<ExpenseForm />} />
+        <Route path="/groups/:groupId/expenses" element={<ExpenseForm />} />
         <Route path="/expenseredirect" element={<ExpenseRedirect />} />
         <Route path="/groupform" element={<GroupForm />} />
     

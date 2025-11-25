@@ -159,7 +159,7 @@ const GraphButton = styled.button`
   border: none;
   border-radius: 0.5rem;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
 

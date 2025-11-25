@@ -34,7 +34,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
-  const [payment, setPayment] = useState("CARD");
+  const [payment, setPayment] = useState("card");
   
   // 통화 및 환율
   const [currency, setCurrency] = useState("KRW");
@@ -50,7 +50,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
   useEffect(() => {
     const initialMembers = members.length ? members : [
-      { userId: 1, name: "김정통" }, { userId: 2, name: "홍길동" }, { userId: 3, name: "유성열" }
+      { userId: 1, name: "김정통" }, { userId: 2, name: "홍길동" }, { userId: 3, name: "장주연" }
     ];
     const obj = {};
     initialMembers.forEach((m) => obj[m.userId] = { selected: false, percent: 0 });
@@ -66,7 +66,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const fetchRate = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/fx`, {
+        const res = await axios.get(`${API_BASE_URL}/fx`, {
           params: { date: getTodayISO(), base: "KRW", symbols: currency }
         });
         
@@ -96,7 +96,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers((prev) => ({
       ...prev, [id]: { ...prev[id], selected: checked }
     }));
-    setSplitMode("PERCENT");
+    setSplitMode("by_percent");
   };
   const setPercent = (id, v) => {
     setSelectedMembers((prev) => ({ ...prev, [id]: { ...prev[id], percent: Number(v) } }));
@@ -109,10 +109,10 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     const next = { ...selectedMembers };
     ids.forEach((id, idx) => next[id].percent = base + (idx === 0 ? remainder : 0));
     setSelectedMembers(next);
-    setSplitMode("EQUAL");
+    setSplitMode("equal");
   };
   const validatePercent = () => {
-    if (splitMode === "EQUAL") return true;
+    if (splitMode === "equal") return true;
     const sum = Object.values(selectedMembers).filter((m) => m.selected).reduce((a, b) => a + b.percent, 0);
     return sum === 100;
   };
@@ -157,7 +157,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       if (newExpenseId && tempReceiptFile) {
         const formData = new FormData();
         formData.append("image", tempReceiptFile);
-        await axios.post(`${API_BASE_URL}/expenses/${newExpenseId}/receipts`, formData, {
+        await axios.post(`${API_BASE_URL}/groups/${groupId}/expenses/${newExpenseId}/receipts`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${accessToken}`,
@@ -236,14 +236,14 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
               <label>결제 방식</label>
               <PaymentButtonGroup>
                 <PaymentButton
-                  active={payment === "CARD"}
-                  onClick={() => setPayment("CARD")}
+                  active={payment === "card"}
+                  onClick={() => setPayment("card")}
                 >
                   카드
                 </PaymentButton>
                 <PaymentButton
-                  active={payment === "CASH"}
-                  onClick={() => setPayment("CASH")}
+                  active={payment === "cash"}
+                  onClick={() => setPayment("cash")}
                 >
                   현금
                 </PaymentButton>
@@ -264,14 +264,14 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
               <MemberRow key={id}>
                 <input type="checkbox" checked={m.selected} onChange={(e) => toggleMember(Number(id), e.target.checked)} />
                 <span className="name">{members.find((mem) => mem.userId === Number(id))?.name || `회원 ${id}`}</span>
-                {splitMode === "PERCENT" && m.selected && (
+                {splitMode === "by_percent" && m.selected && (
                   <> <PercentInput type="number" min={0} max={100} value={m.percent} onChange={(e) => setPercent(Number(id), e.target.value)} /> <span>%</span> </>
                 )}
-                {splitMode === "EQUAL" && m.selected && <EqualBadge>{m.percent}%</EqualBadge>}
+                {splitMode === "equal" && m.selected && <EqualBadge>{m.percent}%</EqualBadge>}
               </MemberRow>
             ))}
             <EqualRow>
-              <input type="checkbox" checked={splitMode === "EQUAL"} onChange={equalSplit} />
+              <input type="checkbox" checked={splitMode === "equal"} onChange={equalSplit} />
               <span>균등 분배</span>
             </EqualRow>
           </ScrollableArea>

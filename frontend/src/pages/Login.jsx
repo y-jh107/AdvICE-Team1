@@ -12,7 +12,7 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 85vh;
   background-color: #fff;
   padding: 1rem;
 

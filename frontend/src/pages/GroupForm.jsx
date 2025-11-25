@@ -9,7 +9,7 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 90vh;
   background-color: #f8f9fa;
   padding: 2rem;
 
@@ -78,7 +78,7 @@ export default function GroupForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (name.trim()) {
-      navigate("/GroupCreate", { state: { name } });
+      navigate("/groupcreate", { state: { name } });
     }
   };
 

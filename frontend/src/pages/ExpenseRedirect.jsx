@@ -7,7 +7,7 @@ import calendarIcon from "../assets/calendar.png";
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #f8fafc;
+  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
   padding: 8rem 2rem 6rem;
   display: flex;
   flex-direction: column;
@@ -16,112 +16,115 @@ const Container = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 2.2rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 3.5rem;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4rem;
   text-align: center;
+  line-height: 1.4;
 
   span {
     color: #3b82f6;
-    font-weight: 800;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   @media (max-width: 768px) {
-    font-size: 1.9rem;
+    font-size: 2rem;
   }
 `;
 
 const ButtonGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2.5rem;
+  gap: 3rem;
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
 
   @media (min-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 3rem;
-  }
-
-  @media (min-width: 1024px) {
     gap: 4rem;
-    max-width: 1000px;
   }
 `;
 
 const ActionButton = styled.button`
   background: white;
-  border-radius: 24px;
-  padding: 3rem 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border-radius: 28px;
+  padding: 3.5rem 2rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 
   &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 24px 48px rgba(59, 130, 246, 0.15);
+    border-color: #93c5fd;
   }
 
   &:active {
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(1.01);
   }
 
   @media (max-width: 768px) {
-    padding: 2.5rem 1.5rem;
+    padding: 2.8rem 1.5rem;
   }
 `;
 
 const IconWrapper = styled.div`
-  width: 150px;
-  height: 150px;
-  margin-bottom: 3rem;
-  border-radius: 80%;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 2.5rem;
+  border-radius: 50%;
   overflow: hidden;
-  background: #ffffffff;
+  background: linear-gradient(135deg, #eef2ff 0%, #dbeafe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 
+    inset 0 4px 12px rgba(99, 102, 241, 0.15),
+    0 8px 25px rgba(0, 0, 0, 0.08);
 
   img {
-    width: 120px;
-    height: 120px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
   }
 
   @media (max-width: 768px) {
-    width: 110px;
-    height: 110px;
+    width: 120px;
+    height: 120px;
     img {
-      width: 76px;
-      height: 76px;
+      width: 80px;
+      height: 80px;
     }
   }
 `;
 
 const ButtonText = styled.p`
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #1e293b;
   text-align: center;
+  letter-spacing: -0.5px;
 
   @media (max-width: 768px) {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
   }
 `;
 
 export default function ExpenseRedirect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-    // 쿼리 파라미터 읽기
   const groupId = searchParams.get("groupId");
   const groupName = searchParams.get("groupName")
     ? decodeURIComponent(searchParams.get("groupName"))
@@ -129,18 +132,13 @@ export default function ExpenseRedirect() {
 
   const goToGroups = () => {
     if (!groupId) return alert("모임 정보가 없습니다.");
-    navigate(`/group/${groupId}/expense`);
+    navigate(`/groups/${groupId}/expenses`);
   };
 
-  //수정함
- const goToCalendar = () => {
-  // 안전장치: 혹시라도 ID가 없으면 경고
-  if (!groupId) return alert("모임 정보가 없습니다.");
-  
-  // ✅ 쿼리 파라미터로 groupId를 함께 전달
-  navigate(`/calendar?groupId=${groupId}`); 
-};
-//수정끝
+  const goToCalendar = () => {
+    if (!groupId) return alert("모임 정보가 없습니다.");
+    navigate(`/calendar?groupId=${groupId}`);
+  };
 
   return (
     <Container>
@@ -148,14 +146,13 @@ export default function ExpenseRedirect() {
         {groupName ? (
           <>
             <span>{groupName}</span> 모임<br />
-            선택지
+            아래 두 상자 중 하나를 선택해주세요
           </>
         ) : (
-          "아래에 보이는 네모 상자를 선택해주세요"
+          "아래 두 상자 중 하나를 선택해주세요"
         )}
       </Title>
       <ButtonGrid>
-        {/* 지출 항목 등록하기 */}
         <ActionButton onClick={goToGroups}>
           <IconWrapper>
             <img src={receiptIcon} alt="지출 등록" />
@@ -163,14 +160,13 @@ export default function ExpenseRedirect() {
           <ButtonText>지출 항목 등록하기</ButtonText>
         </ActionButton>
 
-        {/* 캘린더로 이동하기 */}
         <ActionButton onClick={goToCalendar}>
           <IconWrapper>
             <img src={calendarIcon} alt="캘린더" />
           </IconWrapper>
           <ButtonText>캘린더로 이동하기</ButtonText>
         </ActionButton>
-      </ButtonGrid> 
+      </ButtonGrid>
     </Container>
   );
 }

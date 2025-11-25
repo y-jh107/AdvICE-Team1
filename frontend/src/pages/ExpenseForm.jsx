@@ -14,7 +14,7 @@ export default function ExpenseForm() {
   const [members, setMembers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(3);
 
-  const [paymentFilter, setPaymentFilter] = useState("CARD");
+  const [paymentFilter, setPaymentFilter] = useState("card");
   const [groupName, setGroupName] = useState("여행");
 
   const [showModal, setShowModal] = useState(false);
@@ -71,7 +71,7 @@ export default function ExpenseForm() {
         myAmount: it.myAmount ?? 0,
         location: it.location,
         memo: it.memo ?? "",
-        payment: it.payment ?? "CARD",
+        payment: it.payment ?? "card",
         receiptId: it.receiptId || null,
       }));
 
@@ -93,14 +93,14 @@ export default function ExpenseForm() {
   }, [groupId]);
 
   /** 영수증 이미지 불러오기 */
-  const fetchReceiptImage = async (receiptId) => {
+  const fetchReceiptImage = async (expenseId, receiptId) => {
     if (!receiptId) {
       alert("등록된 영수증이 없습니다.");
       return;
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/receipts/${receiptId}`, {
+      const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses/${expenseId}/receipts/${receiptId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -133,7 +133,7 @@ export default function ExpenseForm() {
 
   const handleOpenReceipt = (expense) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
-    if (expense.receiptId) fetchReceiptImage(expense.receiptId);
+    if (expense.receiptId) fetchReceiptImage(expense.id, expense.receiptId);
     else alert("등록된 영수증이 없습니다.");
   };
 
@@ -153,20 +153,20 @@ export default function ExpenseForm() {
       <TopRow>
         <FilterButtonGroup>
           <FilterButton
-            active={paymentFilter === "CARD"}
-            onClick={() => setPaymentFilter("CARD")}
+            active={paymentFilter === "card"}
+            onClick={() => setPaymentFilter("card")}
           >
             카드
           </FilterButton>
           <FilterButton
-            active={paymentFilter === "CASH"}
-            onClick={() => setPaymentFilter("CASH")}
+            active={paymentFilter === "cash"}
+            onClick={() => setPaymentFilter("cash")}
           >
             현금
           </FilterButton>
         </FilterButtonGroup>
 
-        <AddButton onClick={() => setShowModal(true)}>추가하기</AddButton>
+        <AddButton onClick={() => setShowModal(true)}>+ 추가하기</AddButton>
       </TopRow>
 
       {infoMessage && <InfoMessage>{infoMessage}</InfoMessage>}

@@ -11,7 +11,7 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 85vh;
   background-color: #fff;
   padding: 1rem;
 
@@ -148,7 +148,7 @@ export default function Signup() {
             onChange={(e) => setName(e.target.value)}
           />
 
-          {/* ✅ 추가된 전화번호 입력 필드 */}
+          {/* 추가된 전화번호 입력 필드 */}
           <InputField
             label="전화번호"
             type="text"

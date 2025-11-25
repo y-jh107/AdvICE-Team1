@@ -130,17 +130,13 @@ function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState({});
 
-  // =========================================================
-  // 1. [API GET] 월별 일정 조회
-  // [규칙] URL: /group/{groupId}/calendar (단수형 group, api 없음)
-  // =========================================================
   useEffect(() => {
     if (!groupId) return;
 
     const fetchSchedules = async () => {
       const accessToken = localStorage.getItem("accessToken");
       try {
-        const response = await fetch(`${API_BASE_URL}/group/${groupId}/calendar`, {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/calendar`, {
           method: "GET",
           headers: { 
             "Authorization": `Bearer ${accessToken}`,
@@ -184,10 +180,6 @@ function Calendar() {
     fetchSchedules();
   }, [currentDate, groupId]);
 
-  // =========================================================
-  // 2. [API POST] 일정 등록
-  // [규칙] URL: /api/groups/{groupId}/calendar/event (복수형 groups, api 포함)
-  // =========================================================
   const handleSave = async () => {
     if (!scheduleInput || !dateInput || !timeInput) {
       alert("일정, 날짜, 시간을 모두 입력해주세요."); return;
@@ -199,7 +191,7 @@ function Calendar() {
     const formattedDate = `${dateInput}T${timeInput}:00+09:00`;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/calendar/event`, {
+      const response = await fetch(`${API_BASE_URL}/groups/${groupId}/calendar/event`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -249,10 +241,6 @@ function Calendar() {
     }
   };
   
-  // =========================================================
-  // 3. [API GET] 상세 조회
-  // [규칙] URL: /api/groups/{groupId}/calendar/{type}/{id} (복수형 groups, api 포함)
-  // =========================================================
   const handleEventClick = async (schedule) => {
     if (!groupId) return;
 
@@ -265,7 +253,7 @@ function Calendar() {
     const endpointType = schedule.type === 'expense' ? 'expense' : 'event';
     
     // endpointType 덕분에 ID가 숫자 1, 1로 같아도 경로가 달라서 문제 없음
-    const url = `${API_BASE_URL}/api/groups/${groupId}/calendar/${endpointType}/${schedule.id}`;
+    const url = `${API_BASE_URL}/groups/${groupId}/calendar/${endpointType}/${schedule.id}`;
 
     try {
       const response = await fetch(url, {
@@ -345,7 +333,7 @@ function Calendar() {
             <h2>{dateFormatter.format(currentDate)}</h2>
             <button onClick={handleNextMonth}>{">"}</button>
           </MonthControl>
-          <Button onClick={handleOpenAddModal} variant="primary" text="추가하기" />
+          <Button onClick={handleOpenAddModal} variant="primary" text="+ 추가하기" />
         </CalendarHeader>
 
         <CalendarGrid>
