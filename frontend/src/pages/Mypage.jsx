@@ -21,8 +21,15 @@ const MainContent = styled.main`
   width: 90rem;
   max-width: 80rem;
   margin: 0 auto;
-  padding: 3rem 0rem;
+  /* padding-top을 충분히 늘려서 헤더 아래로 내용을 밀어냅니다 */
+  padding: 8rem 0rem 3rem 0rem; 
   box-sizing: border-box;
+
+  /* 화면이 작은 노트북(반응형)을 위한 미디어 쿼리 추가 */
+  @media (max-width: 1024px) {
+    width: 95%; /* 고정 width 대신 퍼센트 사용 */
+    padding-top: 10rem; /* 작은 화면에서는 헤더가 두 줄이 되거나 커질 수 있으므로 더 넉넉하게 */
+  }
 `;
 
 const PageTitle = styled.h1`
