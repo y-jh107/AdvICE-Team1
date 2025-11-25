@@ -1,12 +1,10 @@
 // src/pages/Mypage.jsx
 
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
 import Button from "../components/Button"; // 공용 버튼 컴포넌트
-import Header from "../components/Header"; // 공용 Header 컴포넌트
-import calendarIcon from "../assets/calendar-icon.png"; // 캘린더 아이콘 이미지 경로
+import Header from "../components/Header"; // [복구됨] 공용 Header 컴포넌트
+import ExchangeRateModal from "../components/ExchangeRateModal"; 
 
 // --- Styled Components ---
 
@@ -21,14 +19,13 @@ const MainContent = styled.main`
   width: 90rem;
   max-width: 80rem;
   margin: 0 auto;
-  /* padding-top을 충분히 늘려서 헤더 아래로 내용을 밀어냅니다 */
+  /* Header 높이를 고려하여 padding-top 설정 (기존 유지) */
   padding: 8rem 0rem 3rem 0rem; 
   box-sizing: border-box;
 
-  /* 화면이 작은 노트북(반응형)을 위한 미디어 쿼리 추가 */
   @media (max-width: 1024px) {
-    width: 95%; /* 고정 width 대신 퍼센트 사용 */
-    padding-top: 10rem; /* 작은 화면에서는 헤더가 두 줄이 되거나 커질 수 있으므로 더 넉넉하게 */
+    width: 95%;
+    padding-top: 10rem;
   }
 `;
 
@@ -52,6 +49,7 @@ const DashboardGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   padding: 0 2rem;
+  margin-bottom: 3rem;
 `;
 
 const Card = styled.div`
@@ -59,19 +57,21 @@ const Card = styled.div`
   padding: 2rem;
   border-radius: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
 `;
 
 const ProfileInfo = styled(Card)``;
 
+const InfoLabel = styled.label`
+  display: block;
+  color: #888;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+`;
+
 const InfoField = styled.div`
   margin-bottom: 1.5rem;
-
-  label {
-    display: block;
-    color: #888;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-  }
 
   p {
     background-color: #f4f6f8;
@@ -80,28 +80,7 @@ const InfoField = styled.div`
     margin: 0;
     font-size: 1rem;
     color: #333;
-  }
-`;
-
-const CalendarLink = styled(Card)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-  text-decoration: none;
-  color: #333;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  img {
-    width: 100px;
-    height: auto;
-    margin-bottom: 1rem;
+    min-height: 1.5rem;
   }
 `;
 
@@ -116,6 +95,7 @@ const ListCard = styled(Card)`
     list-style: none;
     padding: 0;
     margin: 0 0 2rem 0;
+    flex-grow: 1;
   }
   li {
     padding: 0.75rem 0;
@@ -125,8 +105,66 @@ const ListCard = styled(Card)`
       border-bottom: none;
     }
   }
-  ${Button} {
+  & > button, & > a {
     width: 100%;
+    margin-top: auto;
+  }
+`;
+
+// --- 환율 패널 스타일 ---
+const ExchangePanel = styled(Card)`
+  justify-content: space-between;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    color: #333;
+  }
+`;
+
+const ExchangeField = styled.div`
+  margin-bottom: auto; 
+`;
+
+const ExchangeSelect = styled.select`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #f4f6f8;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  appearance: none;
+  
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem top 50%;
+  background-size: 0.65rem auto;
+
+  &:focus {
+    outline: 2px solid #007bff;
+    background-color: #fff;
+  }
+`;
+
+const GraphButton = styled.button`
+  width: fit-content; 
+  align-self: center;
+  padding: 1rem 3rem; 
+  margin-top: 2rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #2563eb;
   }
 `;
 
@@ -136,6 +174,21 @@ function Mypage() {
   const [expenses, setExpenses] = useState([]);
   const [trips, setTrips] = useState([]);
   const [error, setError] = useState(null);
+
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCurrencyChange = (e) => {
+    setSelectedCurrency(e.target.value);
+  };
+
+  const openGraphModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeGraphModal = () => {
+    setIsModalOpen(false);
+  };
 
   useEffect(() => {
     const fetchMyPageData = async () => {
@@ -176,6 +229,9 @@ function Mypage() {
 
   return (
     <PageWrapper>
+      {/* [복구됨] 헤더 컴포넌트 추가 */}
+      <Header />
+
       <MainContent>
         {error && (
           <div style={{ color: "red", textAlign: "center", marginBottom: "1rem" }}>
@@ -184,31 +240,40 @@ function Mypage() {
         )}
 
         <PageTitle>마이페이지</PageTitle>
+        
+        {/* 상단: 프로필 + 여행 목록 */}
         <ContentGrid>
           <ProfileInfo>
             <InfoField>
-              <label>이름</label>
+              <InfoLabel>이름</InfoLabel>
               <p>{user?.name}</p>
             </InfoField>
             <InfoField>
-              <label>아이디</label>
+              <InfoLabel>아이디</InfoLabel>
               <p>{user?.email}</p>
             </InfoField>
             <InfoField>
-              <label>전화번호</label>
+              <InfoLabel>전화번호</InfoLabel>
               <p>{user?.phone}</p>
             </InfoField>
             <InfoField>
-              <label>비밀번호</label>
+              <InfoLabel>비밀번호</InfoLabel>
               <p>************</p>
             </InfoField>
           </ProfileInfo>
-          <CalendarLink as={Link} to="/calendar">
-            <img src={calendarIcon} alt="Calendar icon" />
-            <p>캘린더로 이동하기</p>
-          </CalendarLink>
+
+          <ListCard>
+            <h3>내 여행 목록</h3>
+            <ul>
+              {trips?.map((item) => (
+                <li key={item.groupId}>{item.name}</li>
+              ))}
+            </ul>
+            <Button to="/groups" variant="primary" text={"더보기"} />
+          </ListCard>
         </ContentGrid>
 
+        {/* 하단: 지출 목록 + 환율 계산기 */}
         <DashboardGrid>
           <ListCard>
             <h3>일일 내 지출액</h3>
@@ -219,22 +284,38 @@ function Mypage() {
                 </li>
               ))}
             </ul>
-            {/* [수정됨] 
-              기존에 있던 <Button to="/expenses" ... /> 부분을 삭제했습니다.
-              이제 이 카드는 단순 리스트만 보여주며 클릭해도 아무 일도 일어나지 않습니다.
-            */}
           </ListCard>
           
-          <ListCard>
-            <h3>내 여행 목록</h3>
-            <ul>
-              {trips?.map((item) => (
-                <li key={item.groupId}>{item.name}</li>
-              ))}
-            </ul>
-            <Button to="/groups" variant="primary" text={"더보기"} />
-          </ListCard>
+          <ExchangePanel>
+            <h3>환율 계산기</h3>
+            
+            <ExchangeField>
+              <InfoLabel>통화 선택</InfoLabel>
+              <ExchangeSelect value={selectedCurrency} onChange={handleCurrencyChange}>
+                <option value="KRW">🇰🇷 원 (KRW)</option>
+                <option value="JPY">🇯🇵 엔 (JPY)</option>
+                <option value="USD">🇺🇸 달러 (USD)</option>
+                <option value="CNY">🇨🇳 위안 (CNY)</option>
+                <option value="HKD">🇭🇰 홍콩 (HKD)</option>
+                <option value="TWD">🇹🇼 대만 (TWD)</option>
+                <option value="THB">🇹🇭 바트 (THB)</option>
+                <option value="VND">🇻🇳 동 (VND)</option>
+                <option value="EUR">🇪🇺 유로 (EUR)</option>
+              </ExchangeSelect>
+            </ExchangeField>
+
+            <GraphButton onClick={openGraphModal}>
+              최근 추이 그래프 보기
+            </GraphButton>
+          </ExchangePanel>
         </DashboardGrid>
+
+        <ExchangeRateModal 
+          isOpen={isModalOpen} 
+          onClose={closeGraphModal} 
+          currency={selectedCurrency} 
+        />
+
       </MainContent>
     </PageWrapper>
   );
