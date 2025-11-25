@@ -6,6 +6,9 @@ import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from "../config.js";
 
+// --- [새로 추가됨] 로컬 기본 이미지 Import ---
+import defaultImage from '../assets/frontend/travel_illustration.png';
+
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
   body {
@@ -124,27 +127,18 @@ const Card = styled.div`
   }
 `;
 
-// [추가됨] 이미지 태그 스타일
+// [수정됨] 이미지 태그 스타일
 const CardImage = styled.img`
   width: 100%;
   height: 180px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 16px;
-  background-color: #f0f0e0;
+  background-color: #f0f0e0; /* 이미지가 로딩되기 전 잠깐 보이는 배경색 */
 `;
 
-const ImagePlaceholder = styled.div`
-  width: 100%;
-  height: 180px;
-  background-color: #f0f0e0;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #aaa;
-  margin-bottom: 16px;
-`;
+// [삭제됨] 더 이상 ImagePlaceholder 컴포넌트는 사용하지 않습니다.
+
 const MoreButtonContainer = styled.div`
   text-align: center;
   margin-top: 40px;
@@ -159,7 +153,7 @@ const InfoMessage = styled.p`
 const ITEMS_PER_LOAD = 3;
 
 // --- 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId }) { // tripId 확인됨
+function TripDetailModal({ tripId }) { 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -175,7 +169,6 @@ function TripDetailModal({ tripId }) { // tripId 확인됨
         const accessToken = localStorage.getItem("accessToken"); 
         if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
 
-        // groupId -> tripId 수정 유지됨
         const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
             method: "GET",
             headers: {
@@ -344,14 +337,12 @@ function Groups() {
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => {
               
-              // [수정됨] 이미지 처리 로직
-              // Base64 문자열인지 확인하여 접두어 추가
+              // 이미지 처리 로직
               let imageSrc = null;
               if (travel.image) {
                 if (travel.image.startsWith('http') || travel.image.startsWith('data:')) {
                   imageSrc = travel.image;
                 } else {
-                  // 순수 Base64 String이 들어오면 포맷 추가
                   imageSrc = `data:image/jpeg;base64,${travel.image}`;
                 }
               }
@@ -366,14 +357,12 @@ function Groups() {
                     onMouseEnter={() => handleCardEnter(travel.id)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    {/* [수정됨] 이미지가 있으면 CardImage, 없으면 Placeholder */}
-                    {imageSrc ? (
-                      <CardImage src={imageSrc} alt={travel.name} />
-                    ) : (
-                      <ImagePlaceholder>
-                        <span>이미지 없음</span>
-                      </ImagePlaceholder>
-                    )}
+                    {/* [수정됨] 이미지가 있으면 그 이미지를, 없으면 import한 기본 이미지를 보여줍니다. */}
+                    {/* OR 연산자 (||)를 사용하여 imageSrc가 없을 때 defaultImage를 사용합니다. */}
+                    <CardImage 
+                      src={imageSrc || defaultImage} 
+                      alt={travel.name} 
+                    />
                     
                     <h3>{travel.name}</h3>
                     <p>{travel.description}</p>
