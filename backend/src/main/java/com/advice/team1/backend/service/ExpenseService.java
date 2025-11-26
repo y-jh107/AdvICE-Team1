@@ -143,7 +143,7 @@ public class ExpenseService {
                                     .setScale(2, RoundingMode.HALF_UP);
                         }
                     } else if ("equal".equals(mode)) {
-                        shareRatio = BigDecimal.ONE.divide(totalAmount, 4, RoundingMode.HALF_UP );
+                        shareRatio = BigDecimal.ONE.divide(BigDecimal.valueOf(participantsSize), 4, RoundingMode.HALF_UP );
 
                         shareAmount = totalAmount.divide(BigDecimal.valueOf(participantsSize), 2, RoundingMode.HALF_UP);
                     }
