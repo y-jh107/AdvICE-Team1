@@ -17,7 +17,7 @@ import java.io.IOException;
 
 // 하나하나 조회용 컨트롤러
 @RestController
-@RequestMapping("/api/expenses")
+@RequestMapping("/api/group/{groupId}/expenses")
 @RequiredArgsConstructor
 public class ExpenseController {
 
