@@ -293,9 +293,13 @@ function Groups() {
   }, []); 
 
   const handleMoreClick = () => {
-    const isAllVisible = visibleCount >= allTravelList.length;
-    setVisibleCount(isAllVisible ? ITEMS_PER_LOAD : prev => prev + ITEMS_PER_LOAD);
+    if (visibleCount >= allTravelList.length) {
+      setVisibleCount(ITEMS_PER_LOAD); // 접기
+    } else {
+      setVisibleCount(prev => prev + ITEMS_PER_LOAD); // 더보기
+    }
   };
+
 
   const handleCloseModal = () => {
     clearTimeout(hoverTimerRef.current);
