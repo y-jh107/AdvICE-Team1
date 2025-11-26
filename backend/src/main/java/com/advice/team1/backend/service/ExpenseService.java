@@ -35,7 +35,7 @@ public class ExpenseService {
         }
 
         String rawMode = req.splitMode();
-        String normalizedMode = "by_percent".equalsIgnoreCase(rawMode) ? "by_percent" : "empty";
+        String normalizedMode = "by_percent".equalsIgnoreCase(rawMode) ? "by_percent" : "equal";
 
         Expense expense = Expense.builder()
                 .group(group)
@@ -100,6 +100,8 @@ public class ExpenseService {
                                                             String mode,
                                                             ExpenseCreateRequestDto req) {
         List<ExpenseParticipantRequestDto> reqParticipants = req.participants();
+        int participantsSize = reqParticipants.size();
+
         if (reqParticipants == null || reqParticipants.isEmpty()) {
             return Collections.emptyList();
         }
@@ -131,7 +133,6 @@ public class ExpenseService {
                     BigDecimal shareRatio = null;
                     BigDecimal shareAmount = null;
 
-
                     if ("by_percent".equals(mode) && p.percent() != null) {
                         shareRatio = BigDecimal.valueOf(p.percent())
                                 .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
@@ -141,6 +142,10 @@ public class ExpenseService {
                                     .multiply(shareRatio)
                                     .setScale(2, RoundingMode.HALF_UP);
                         }
+                    } else if ("equal".equals(mode)) {
+                        shareRatio = BigDecimal.ONE.divide(totalAmount, 4, RoundingMode.HALF_UP );
+
+                        shareAmount = totalAmount.divide(BigDecimal.valueOf(participantsSize), 2, RoundingMode.HALF_UP);
                     }
 
                     return ExpenseParticipants.builder()

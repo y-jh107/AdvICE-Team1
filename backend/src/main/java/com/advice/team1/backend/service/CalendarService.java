@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,9 +58,12 @@ public class CalendarService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
 
+        String rawDate = String.valueOf(request.getDate()).substring(0, 10);
+        LocalDate date = LocalDate.parse(rawDate);
+
         Event event = Event.builder()
                 .name(request.getName())
-                .date(request.getDate())
+                .date(date)
                 .location(request.getLocation())
                 .group(group)
                 .build();

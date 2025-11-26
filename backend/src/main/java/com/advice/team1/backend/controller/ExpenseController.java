@@ -3,6 +3,7 @@ package com.advice.team1.backend.controller;
 import com.advice.team1.backend.common.cache.ReceiptCache;
 import com.advice.team1.backend.common.response.ApiResponse;
 import com.advice.team1.backend.common.security.CustomUserPrincipal;
+import com.advice.team1.backend.domain.dto.ExpenseCreateRequestDto;
 import com.advice.team1.backend.domain.dto.ExpenseDetailDto;
 import com.advice.team1.backend.domain.dto.ReceiptDto;
 import com.advice.team1.backend.domain.dto.ReceiptRequestDto;
@@ -17,7 +18,7 @@ import java.io.IOException;
 
 // 하나하나 조회용 컨트롤러
 @RestController
-@RequestMapping("/api/group/{groupId}/expenses")
+@RequestMapping("/api/groups/{groupId}/expenses")
 @RequiredArgsConstructor
 public class ExpenseController {
 
@@ -39,7 +40,7 @@ public class ExpenseController {
     public ApiResponse<String> addReceipt (
             @PathVariable Long expenseId,
             @AuthenticationPrincipal CustomUserPrincipal user,
-            @RequestHeader(value="Idempotency-UUID", required=false) String idempotencyKey,
+            @RequestHeader(value="Idempotency-Key", required=false) String idempotencyKey,
             @ModelAttribute ReceiptRequestDto req
     ) throws IOException {
         if (receiptCache.contains(idempotencyKey)) {

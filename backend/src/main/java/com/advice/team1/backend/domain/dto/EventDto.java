@@ -16,7 +16,7 @@ public class EventDto {
     @AllArgsConstructor
     public static class Request {
         private String name;
-        private LocalDate date;
+        private String date;
         private String location;
     }
 
