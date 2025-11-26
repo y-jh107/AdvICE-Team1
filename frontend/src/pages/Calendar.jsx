@@ -111,7 +111,6 @@ const ModalFooter = styled.div`
   ${Button} { width: 100%; padding: 0.75rem; font-size: 1rem; }
 `;
 
-
 // --- 3. 메인 컴포넌트 ---
 function Calendar() {
   const [searchParams] = useSearchParams();
@@ -128,8 +127,13 @@ function Calendar() {
 
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // 스케줄 상태: { 1: [event1, event2], 15: [event3] } 형식
   const [schedules, setSchedules] = useState({});
 
+  // ---------------------------------------------------------
+  // [수정] 캘린더 데이터 불러오기 (ghosting issue 해결)
+  // ---------------------------------------------------------
   useEffect(() => {
     if (!groupId) return;
 
@@ -140,7 +144,7 @@ function Calendar() {
           method: "GET",
           headers: { 
             "Authorization": `Bearer ${accessToken}`,
-            // "Accept": "application/json" 
+            // "Accept": "application/json" // 필요 시 주석 해제
           },
         });
 
@@ -148,37 +152,48 @@ function Calendar() {
 
         if (json.code === "SU") {
           const list = json.data;
+          
+          // 현재 화면에 보여지는 연/월
           const currentYear = currentDate.getFullYear();
           const currentMonth = currentDate.getMonth();
+          
+          // [핵심] 매번 빈 객체로 시작하여 이전 달 데이터 잔상을 없앰
           const newSchedules = {};
 
           list.forEach((item) => {
             const itemDate = new Date(item.date);
-            // 현재 보고 있는 달력의 연/월과 일치하는 데이터만 필터링
+            
+            // 날짜 파싱 유효성 검사
+            if (isNaN(itemDate.getTime())) return;
+
+            // [핵심] 정확히 현재 달력의 연/월과 일치하는 데이터만 필터링
             if (itemDate.getFullYear() === currentYear && itemDate.getMonth() === currentMonth) {
               const day = itemDate.getDate();
               if (!newSchedules[day]) newSchedules[day] = [];
               
               newSchedules[day].push({
-                // 서버에서 주는 ID (eventId 혹은 expenseId일 수 있으나 목록에선 보통 id로 통일됨)
                 id: item.id, 
                 title: item.name,
-                type: item.type,
+                // type이 서버에서 오면 그것을 쓰고, 없으면 기본값 'event'
+                type: item.type || 'event', 
                 date: item.date,
                 color: item.type === 'expense' ? SCHEDULE_COLORS.expense : SCHEDULE_COLORS.event
               });
             }
           });
+          // 상태 덮어쓰기
           setSchedules(newSchedules);
+
         } else if (json.code === "NG") {
-           alert("해당 모임 정보를 불러올 수 없습니다.");
+           console.error("해당 모임 정보를 불러올 수 없습니다.");
         }
       } catch (err) {
         console.error("캘린더 로딩 실패:", err);
       }
     };
     fetchSchedules();
-  }, [currentDate, groupId]);
+  }, [currentDate, groupId]); 
+  // currentDate가 변경될 때마다 실행되므로 달을 넘기면 새로 불러오고 정리함
 
   const handleSave = async () => {
     if (!scheduleInput || !dateInput || !timeInput) {
@@ -210,18 +225,17 @@ function Calendar() {
         const newEvent = json.data;
         const eventDate = new Date(newEvent.date);
         
-        // [중요] eventId를 내부 id로 매핑
-        const newId = newEvent.eventId; 
-
-        // 현재 달력 화면 갱신
+        // 새로 추가한 일정이 현재 보고 있는 달에 포함된다면 화면에 즉시 반영
         if (eventDate.getMonth() === currentDate.getMonth() && eventDate.getFullYear() === currentDate.getFullYear()) {
             const day = eventDate.getDate();
+            const newId = newEvent.eventId || newEvent.id; // API 응답 키 확인
+
             setSchedules((prev) => ({
                 ...prev,
                 [day]: [...(prev[day] || []), {
                     id: newId, 
                     title: newEvent.name,
-                    type: 'event', // 등록은 항상 event
+                    type: 'event', // 직접 추가한 건 무조건 event
                     date: newEvent.date,
                     color: SCHEDULE_COLORS.event,
                 }]
@@ -241,6 +255,9 @@ function Calendar() {
     }
   };
   
+  // ---------------------------------------------------------
+  // [수정] 상세 조회 (undefined 및 경로 문제 해결)
+  // ---------------------------------------------------------
   const handleEventClick = async (schedule) => {
     if (!groupId) return;
 
@@ -249,10 +266,9 @@ function Calendar() {
 
     const accessToken = localStorage.getItem("accessToken");
     
-    // schedule.type이 'expense'이면 'expense', 아니면 'event'
+    // type 체크: expense면 'expense', 아니면 'event'
     const endpointType = schedule.type === 'expense' ? 'expense' : 'event';
     
-    // endpointType 덕분에 ID가 숫자 1, 1로 같아도 경로가 달라서 문제 없음
     const url = `${API_BASE_URL}/groups/${groupId}/calendar/${endpointType}/${schedule.id}`;
 
     try {
@@ -267,8 +283,17 @@ function Calendar() {
       const json = await response.json();
 
       if (json.code === "SU") {
-        setSelectedDetail(json.data.event); 
-        setIsDetailModalOpen(true);
+        // [핵심] 서버가 데이터를 event에 줄지, expense에 줄지 모르므로 다 체크
+        const detailData = json.data.event || json.data.expense || json.data;
+        
+        if (detailData) {
+          setSelectedDetail(detailData); 
+          setIsDetailModalOpen(true);
+        } else {
+          // 데이터는 왔는데 구조가 예상과 다를 때
+          console.warn("데이터 구조 확인 필요:", json.data);
+          alert("상세 정보를 표시할 수 없습니다.");
+        }
       } 
       else if (json.code === "NE") {
         alert("일정을 찾을 수 없습니다.");
@@ -344,7 +369,7 @@ function Calendar() {
               {dateInfo.isCurrentMonth &&
                 schedules[dateInfo.day]?.map((schedule) => (
                   <ScheduleItem 
-                    // [핵심] ID 중복 오류 방지를 위한 Key 설정 (type + id 조합)
+                    // [핵심] 키 중복 방지: type + id 조합
                     key={`${schedule.type}-${schedule.id}`} 
                     $bgColor={schedule.color}
                     onClick={() => handleEventClick(schedule)}
@@ -395,7 +420,7 @@ function Calendar() {
         </ModalOverlay>
       )}
       
-      {/* 일정 상세 모달 */}
+      {/* 상세 정보 모달 */}
       {isDetailModalOpen && (
         <ModalOverlay onClick={() => setIsDetailModalOpen(false)}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -408,13 +433,20 @@ function Calendar() {
                 <>
                   <DetailText><span>이름:</span> {selectedDetail.name}</DetailText>
                   <DetailText><span>일시:</span> {formatDateTime(selectedDetail.date)}</DetailText>
-                  {/* 여행 일정일 때 */}
+                  
+                  {/* 여행 일정일 때 (장소가 있는 경우) */}
                   {selectedDetail.location && (
                     <DetailText><span>장소:</span> {selectedDetail.location}</DetailText>
                   )}
-                  {/* 지출 항목일 때 */}
+                  
+                  {/* 지출 항목일 때 (금액이 있는 경우 - 0원일 수도 있으므로 undefined 체크) */}
                   {selectedDetail.amount !== undefined && (
-                    <DetailText><span>금액:</span> {selectedDetail.amount.toLocaleString()}원</DetailText>
+                    <DetailText><span>금액:</span> {Number(selectedDetail.amount).toLocaleString()}원</DetailText>
+                  )}
+                  
+                  {/* 카테고리 (지출일 경우) */}
+                  {selectedDetail.category && (
+                    <DetailText><span>분류:</span> {selectedDetail.category}</DetailText>
                   )}
                 </>
               ) : ( <p>정보가 없습니다.</p> )}

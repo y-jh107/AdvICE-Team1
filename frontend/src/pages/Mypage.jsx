@@ -1,9 +1,7 @@
-// src/pages/Mypage.jsx
-
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "../components/Button"; // 공용 버튼 컴포넌트
-import Header from "../components/Header"; // [복구됨] 공용 Header 컴포넌트
+import Header from "../components/Header"; // 공용 Header 컴포넌트
 import ExchangeRateModal from "../components/ExchangeRateModal"; 
 
 // --- Styled Components ---
@@ -19,7 +17,6 @@ const MainContent = styled.main`
   width: 90rem;
   max-width: 80rem;
   margin: 0 auto;
-  /* Header 높이를 고려하여 padding-top 설정 (기존 유지) */
   padding: 8rem 0rem 3rem 0rem; 
   box-sizing: border-box;
 
@@ -229,7 +226,6 @@ function Mypage() {
 
   return (
     <PageWrapper>
-      {/* [복구됨] 헤더 컴포넌트 추가 */}
       <Header />
 
       <MainContent>
@@ -295,11 +291,12 @@ function Mypage() {
                 <option value="KRW">🇰🇷 원 (KRW)</option>
                 <option value="JPY">🇯🇵 엔 (JPY)</option>
                 <option value="USD">🇺🇸 달러 (USD)</option>
-                <option value="CNY">🇨🇳 위안 (CNY)</option>
+                {/* [수정 적용] 대만->싱가포르, 베트남->호주, 위안화 CNH */}
+                <option value="CNH">🇨🇳 위안 (CNH)</option>
                 <option value="HKD">🇭🇰 홍콩 (HKD)</option>
-                <option value="TWD">🇹🇼 대만 (TWD)</option>
+                <option value="SGD">🇸🇬 싱가포르 (SGD)</option>
                 <option value="THB">🇹🇭 바트 (THB)</option>
-                <option value="VND">🇻🇳 동 (VND)</option>
+                <option value="AUD">🇦🇺 호주 (AUD)</option>
                 <option value="EUR">🇪🇺 유로 (EUR)</option>
               </ExchangeSelect>
             </ExchangeField>
