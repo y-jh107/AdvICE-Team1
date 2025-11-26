@@ -1,4 +1,3 @@
-// src/pages/ExpenseForm.jsx
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import ExpenseModal from "../components/ExpenseModal";
@@ -19,9 +18,11 @@ export default function ExpenseForm() {
 
   const [showModal, setShowModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  
+  // [수정] 선택된 지출 ID 상태 추가
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
+  
   const [receiptImgData, setReceiptImgData] = useState(null);
-
   const [infoMessage, setInfoMessage] = useState("");
 
   const accessToken = localStorage.getItem("accessToken");
@@ -31,7 +32,7 @@ export default function ExpenseForm() {
   const fetchGroupData = async () => {
     if (!accessToken) {
       setMembers([]);
-      setExpenses([]); // 목업 제거 → 빈 배열로 설정
+      setExpenses([]); 
       setGroupName("여행");
       setInfoMessage("로그인 후 실제 지출 내역을 확인할 수 있습니다.");
       return;
@@ -80,7 +81,7 @@ export default function ExpenseForm() {
 
     } catch (err) {
       console.error(err);
-      setExpenses([]); // 목업 제거된 버전 → 빈 배열
+      setExpenses([]); 
       setMembers([]);
       setGroupName("여행");
       setInfoMessage(err.message);
@@ -131,10 +132,16 @@ export default function ExpenseForm() {
     }
   };
 
+  // [수정] 영수증 모달 열 때 ID 저장
   const handleOpenReceipt = (expense) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
-    if (expense.receiptId) fetchReceiptImage(expense.id, expense.receiptId);
-    else alert("등록된 영수증이 없습니다.");
+    
+    if (expense.receiptId) {
+      setSelectedExpenseId(expense.id); // <--- 이 부분 추가됨
+      fetchReceiptImage(expense.id, expense.receiptId);
+    } else {
+      alert("등록된 영수증이 없습니다.");
+    }
   };
 
   const filteredExpenses = expenses.filter(
@@ -223,6 +230,7 @@ export default function ExpenseForm() {
         </ModalOverlay>
       )}
 
+      {/* [수정] expenseId 전달 및 닫을 때 초기화 */}
       {showReceiptModal && (
         <ModalOverlay>
           <ReceiptModal
@@ -231,6 +239,7 @@ export default function ExpenseForm() {
             onClose={() => {
               setShowReceiptModal(false);
               setReceiptImgData(null);
+              setSelectedExpenseId(null);
             }}
           />
         </ModalOverlay>
