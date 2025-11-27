@@ -3,7 +3,6 @@ package com.advice.team1.backend.controller;
 import com.advice.team1.backend.common.cache.ReceiptCache;
 import com.advice.team1.backend.common.response.ApiResponse;
 import com.advice.team1.backend.common.security.CustomUserPrincipal;
-import com.advice.team1.backend.domain.dto.ExpenseCreateRequestDto;
 import com.advice.team1.backend.domain.dto.ExpenseDetailDto;
 import com.advice.team1.backend.domain.dto.ReceiptDto;
 import com.advice.team1.backend.domain.dto.ReceiptRequestDto;
@@ -52,12 +51,12 @@ public class ExpenseController {
         return ApiResponse.success("영수증 이미지 업로드 성공", "/api/expenses/" + expenseId + "/receipt");
     }
 
-    @GetMapping("/receipts/{receiptId}")
+    @GetMapping("/{expenseId}/receipts")
     public ApiResponse<ReceiptDto> getReceipt(
-            @PathVariable Long receiptId,
+            @PathVariable Long expenseId,
             @AuthenticationPrincipal CustomUserPrincipal user
     ) {
-        ReceiptDto receiptDto = expenseService.getReceipt(receiptId);
+        ReceiptDto receiptDto = expenseService.getReceipt(expenseId);
 
         return ApiResponse.success("영수증 정보 불러오기 성공", receiptDto);
     }

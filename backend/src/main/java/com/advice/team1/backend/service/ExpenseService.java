@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -179,6 +180,9 @@ public class ExpenseService {
     }
 
     public ReceiptDto getReceipt(Long expenseId) {
+        Expense e = expenses.findById(expenseId)
+                .orElseThrow(() -> new NoSuchElementException("해당 지출을 찾을 수 없습니다."));
+
         Receipt r = receipts.findByExpenseId(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 지출에 등록된 영수증이 없습니다."));
 
@@ -195,12 +199,9 @@ public class ExpenseService {
                         ? Collections.emptyList()
                         : participants.stream()
                         .map(ep -> {
-                            Integer percent = null;
+                            BigDecimal myAmount = null;
                             if (ep.getShareRatio() != null) {
-                                percent = ep.getShareRatio()
-                                        .multiply(BigDecimal.valueOf(100))
-                                        .setScale(0, RoundingMode.HALF_UP)
-                                        .intValue();
+                                myAmount = ep.getShareAmount();
                             }
 
                             User u = ep.getUser();
@@ -208,7 +209,7 @@ public class ExpenseService {
                                     u.getId(),
                                     u.getName(),
                                     u.getEmail(),
-                                    percent
+                                    myAmount
                             );
                         })
                         .toList();
