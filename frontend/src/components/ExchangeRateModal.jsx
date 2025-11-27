@@ -6,20 +6,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
-// [수정] 최근 7일 날짜 배열 생성 (YYYY-MM-DD)
-const getPast7Days = () => {
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    dates.push(`${year}-${month}-${day}`);
-  }
-  return dates;
-};
-
 const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,68 +21,71 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
     fetchWeeklyRates();
   }, [isOpen, currency]);
 
+  // 오늘 날짜 구하기 (YYYY-MM-DD)
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchWeeklyRates = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // 1. 최근 7일 날짜 준비
-      const dates = getPast7Days();
-
-      // 2. 100단위 통화 심볼 처리 (JPY, IDR) - ExpenseModal과 동일하게 처리
+      // 1. [기존 로직 유지] 100단위 통화 심볼 처리 (JPY, IDR)
       let querySymbol = currency;
       const is100Unit = ["JPY", "IDR"].includes(currency);
       if (is100Unit) {
         querySymbol = `${currency}(100)`;
       }
 
-      // 3. 7일치 데이터 병렬 요청 (API가 하루치씩만 주기 때문)
-      const requests = dates.map(date => 
-        axios.get(`${API_BASE_URL}/fx`, {
-          params: { date, base: "KRW" }
-        }).catch(() => null) // 실패 시(주말 등) null 반환하여 전체 로직 안 멈추게 함
-      );
+      // 2. [수정됨] API 호출 (반복문 제거 -> 1회 호출로 변경)
+      // querySymbol(예: JPY(100))을 그대로 서버에 전달
+      const response = await axios.get(`${API_BASE_URL}/api/fx`, {
+        params: {
+          date: getTodayDate(), // 오늘 날짜 기준
+          symbols: querySymbol, // 변환된 심볼 사용 (건드리지 않음)
+          base: "KRW"
+        }
+      });
 
-      const responses = await Promise.all(requests);
+      const responseBody = response.data;
 
-      // 4. 데이터 가공 및 병합
-      const formattedData = responses
-        .map((res, index) => {
-          if (!res || !res.data) return null;
-          
-          // 응답 구조 확인 (배열 혹은 { data: [] })
-          const dataList = Array.isArray(res.data) ? res.data : (res.data.data || []);
-          
-          // 해당 통화(cur_unit) 찾기
-          const targetItem = dataList.find(item => item.cur_unit === querySymbol);
-          if (!targetItem) return null;
+      // 3. 응답 처리
+      if (!responseBody) throw new Error("서버 응답이 없습니다.");
 
-          // [핵심 로직] deal_bas_r(매매기준율) 파싱 및 콤마 제거
-          let rateVal = typeof targetItem.deal_bas_r === 'string' 
-            ? parseFloat(targetItem.deal_bas_r.replace(/,/g, '')) 
-            : targetItem.deal_bas_r;
+      if (responseBody.code === "SU") {
+        const formattedData = responseBody.data.map(item => {
+          // 서버에서 받은 값 (콤마 등은 백엔드가 처리했거나 숫자형으로 옴)
+          let rateVal = item.rate;
 
-          // 100단위 통화라면 1단위로 보정
+          // 4. [기존 로직 유지] 100단위 통화라면 1단위로 보정
           if (is100Unit) {
             rateVal = rateVal / 100;
           }
 
           return {
-            date: dates[index].substring(5).replace('-', '.'), // MM.DD
+            date: item.date.substring(5).replace('-', '.'), // MM.DD 포맷팅
             rate: rateVal
           };
-        })
-        .filter(item => item !== null); // 데이터가 없는 날(주말)은 필터링
+        });
 
-      if (formattedData.length === 0) {
-        setError("최근 데이터가 없습니다. (주말/공휴일 제외)");
+        if (formattedData.length === 0) {
+          setError("최근 데이터가 없습니다. (주말/공휴일 등)");
+        } else {
+          setChartData(formattedData);
+        }
       } else {
-        setChartData(formattedData);
+        // 에러 코드 처리 (AE, TO 등)
+        setError(responseBody.message || "환율 정보를 불러올 수 없습니다.");
       }
 
     } catch (err) {
       console.error(err);
-      setError("환율 정보를 불러오는 중 오류가 발생했습니다.");
+      setError("서버 통신 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -137,7 +126,6 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
                     axisLine={false} 
                     tickLine={false} 
                     width={40}
-                    // 소수점 제거해서 깔끔하게 표시
                     tickFormatter={(val) => Math.floor(val).toLocaleString()} 
                   />
                   <Tooltip 

@@ -28,7 +28,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const accessToken = localStorage.getItem("accessToken");
 
   const [name, setName] = useState("");
-  // 날짜가 비어있으면 오늘 날짜를 기본값으로 사용 (API 요청 시 필요)
+  // 날짜가 비어있으면 오늘 날짜를 기본값으로 사용
   const [spentAt, setSpentAt] = useState(getTodayISO());
   
   const [amount, setAmount] = useState("");
@@ -55,7 +55,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers(obj);
   }, [members]);
 
-  // [수정됨] 환율 조회 로직 개선 (API 응답 데이터 구조 반영)
+  // [수정] 환율 조회 로직 (ExchangeRateModal과 동일한 API/방식 사용)
   useEffect(() => {
     if (currency === "KRW") {
       setCurrentRate(1);
@@ -64,7 +64,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const fetchRate = async () => {
       try {
-        // [수정 1] JPY, IDR 등 100단위 통화 처리
+        // 1. 심볼 처리 (기존 로직 유지)
         let querySymbol = currency;
         const is100Unit = ["JPY", "IDR"].includes(currency);
         if (is100Unit) {
@@ -73,42 +73,40 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
         const dateParam = spentAt || getTodayISO();
 
-        // API 호출
-        const res = await axios.get(`${API_BASE_URL}/fx`, {
-          params: { date: dateParam, base: "KRW" } 
+        // 2. API 호출 (명세서 방식: /api/fx)
+        const res = await axios.get(`${API_BASE_URL}/api/fx`, {
+          params: { 
+            date: dateParam, 
+            symbols: querySymbol, // 처리된 심볼 전달 (JPY(100))
+            base: "KRW" 
+          } 
         });
         
-        // [수정 2] 응답 데이터 구조 유연하게 처리 (res.data 자체가 배열일 수도, wrapped일 수도 있음)
-        const responseData = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        
-        if (responseData && responseData.length > 0) {
-          // [수정 3] 배열에서 현재 선택된 통화(cur_unit)와 일치하는 항목 찾기
-          const targetItem = responseData.find(item => item.cur_unit === querySymbol);
+        const responseBody = res.data;
+
+        // 3. 응답 처리 (API 명세서 구조: code, data)
+        if (responseBody && responseBody.code === "SU" && responseBody.data && responseBody.data.length > 0) {
+          // data는 [{ date: "YYYY-MM-DD", rate: 1234 }, ...] 형태의 배열
+          // 선택한 날짜(spentAt)와 일치하는 데이터가 있으면 사용, 없으면(주말 등) 가장 최근 데이터 사용
+          const exactMatch = responseBody.data.find(item => item.date === dateParam);
+          
+          // 정확한 날짜가 없으면 배열의 첫 번째(보통 가장 최근 유효일) 사용
+          const targetItem = exactMatch || responseBody.data[0];
 
           if (targetItem) {
-            // [수정 4] 필드명 deal_bas_r(매매기준율) 사용 및 콤마 제거
-            let rateVal = targetItem.deal_bas_r; 
+            let rateVal = Number(targetItem.rate);
 
-            if (typeof rateVal === "string") {
-              rateVal = parseFloat(rateVal.replace(/,/g, ""));
-            }
-
-            // 100단위 통화 보정 (1단위 가격으로 변환)
+            // 4. 100단위 통화 보정 (기존 로직 유지)
+            // 백엔드는 원본 데이터를 주므로, 여기서 100으로 나눠야 함
             if (is100Unit) {
               rateVal = rateVal / 100;
             }
 
-            if (rateVal > 0) {
-              setCurrentRate(rateVal);
-            } else {
-              setCurrentRate(1);
-            }
-          } else {
-            console.warn(`${currency} 환율 데이터 없음 (목록에 없음)`);
-            setCurrentRate(1);
+            setCurrentRate(rateVal > 0 ? rateVal : 1);
           }
         } else {
-          console.warn(`${currency} 환율 데이터 없음 (빈 배열)`);
+          // 데이터가 없거나 실패한 경우
+          console.warn(`${currency} 환율 데이터 없음`);
           setCurrentRate(1); 
         }
       } catch (err) {
@@ -238,7 +236,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
                   <option value="KRW">🇰🇷 원 (KRW)</option>
                   <option value="JPY">🇯🇵 엔 (JPY)</option>
                   <option value="USD">🇺🇸 달러 (USD)</option>
-                  {/* [수정] API 데이터 상 위안화 코드는 CNH임 */}
                   <option value="CNH">🇨🇳 위안 (CNH)</option>
                   <option value="HKD">🇭🇰 홍콩 (HKD)</option>
                   <option value="SGD">🇸🇬 싱가포르 (SGD)</option>
