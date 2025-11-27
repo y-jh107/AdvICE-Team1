@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -186,10 +187,17 @@ public class ExpenseService {
         Receipt r = receipts.findByExpenseId(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 지출에 등록된 영수증이 없습니다."));
 
+        String image = null;
+        byte[] imageBytes = r.getImage();
+
+        if (imageBytes != null) {
+            image = Base64.getEncoder().encodeToString(imageBytes);
+        }
+
         return new ReceiptDto(
                 r.getId(),
                 r.getExpense().getId(),
-                r.getImage()
+                image
         );
     }
 
