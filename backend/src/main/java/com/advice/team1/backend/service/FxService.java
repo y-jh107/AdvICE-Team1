@@ -46,11 +46,6 @@ public class FxService {
         String raw = fx.getDealBasRate().replace(",", "").trim();
         BigDecimal val = new BigDecimal(raw);
 
-        // 단위가 100이면 → 1단위 환산 (예: JPY(100))
-        if (fx.getCurrency() != null && fx.getCurrency().contains("100")) {
-            val = val.divide(BigDecimal.valueOf(100));
-        }
-
         return val;
     }
 
