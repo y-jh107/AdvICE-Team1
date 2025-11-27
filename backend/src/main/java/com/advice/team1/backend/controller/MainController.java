@@ -5,7 +5,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class MainController {
-    @RequestMapping("/")
+    @RequestMapping("/app")
+
     public String index() {
         return "forward:/index.html";
     }

@@ -100,17 +100,26 @@ public class GroupService {
 
     @Transactional(readOnly = true)
     public List<GroupDto> getGroupsByUserId(Long userId) {
+
         return groupMembers.findByUser_Id(userId)
                 .stream()
                 .map(gm -> {
                     Group g = gm.getGroup();
+
+                    String image = null;
+                    byte[] imageBytes = g.getGroupImage();
+
+                    if (imageBytes != null) {
+                        image = Base64.getEncoder().encodeToString(imageBytes);
+                    }
+
                     return new GroupDto(
                             g.getId(),
                             g.getName(),
                             g.getDescription(),
                             g.getStartDate(),
                             g.getEndDate(),
-                            Base64.getEncoder().encodeToString(g.getGroupImage())
+                            image
                     );
                 })
                 .collect(Collectors.toList());
