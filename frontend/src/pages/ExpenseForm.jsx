@@ -59,11 +59,9 @@ export default function ExpenseForm() {
       const expenseData = await expenseRes.json();
       const list = expenseData?.data ?? [];
 
-      /** 수정: participants 기반 myAmount 정확히 매핑 */
       const normalized = list.map((it) => {
-        // 내 참여자 정보 찾기
         const myParticipant = it.participants?.find(
-          (p) => p.userId === user?.id
+          p => Number(p.userId) === Number(user?.id)
         );
 
         return {
@@ -72,17 +70,15 @@ export default function ExpenseForm() {
           name: it.name,
           totalAmount: it.amount,
           myAmount: myParticipant?.myAmount ?? 0,
-
           location: it.location,
           memo: it.memo ?? "",
           payment: it.payment?.toLowerCase?.() ?? "card",
-          receiptId: it.receiptId || null,
+          /** receiptId 제거됨 */
         };
       });
 
       setExpenses(normalized);
       setInfoMessage("");
-
     } catch (err) {
       console.error(err);
       setExpenses([]);
@@ -97,11 +93,9 @@ export default function ExpenseForm() {
     fetchGroupData();
   }, [groupId]);
 
-  const fetchReceiptImage = async (expenseId, receiptId) => {
-    if (!receiptId) {
-      alert("등록된 영수증이 없습니다.");
-      return;
-    }
+  /** 영수증 조회 — receiptId 사용 안함 */
+  const fetchReceiptImage = async (expenseId) => {
+    if (!accessToken) return alert("로그인이 필요합니다.");
 
     try {
       const res = await fetch(
@@ -135,19 +129,14 @@ export default function ExpenseForm() {
     }
   };
 
+  /** receiptId 없이 바로 실행 */
   const handleOpenReceipt = (expense) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
-    if (expense.receiptId) {
-      setSelectedExpenseId(expense.id);
-      fetchReceiptImage(expense.id, expense.receiptId);
-    } else {
-      alert("등록된 영수증이 없습니다.");
-    }
+    setSelectedExpenseId(expense.id);
+    fetchReceiptImage(expense.id);
   };
 
-  const filteredExpenses = expenses.filter(
-    (e) => e.payment === paymentFilter
-  );
+  const filteredExpenses = expenses.filter((e) => e.payment === paymentFilter);
 
   const handleMore = () => {
     if (visibleCount >= filteredExpenses.length) setVisibleCount(3);
@@ -200,7 +189,10 @@ export default function ExpenseForm() {
                 <Cell>{e.totalAmount.toLocaleString()}원</Cell>
                 <Cell>{e.myAmount.toLocaleString()}원</Cell>
                 <Cell>{e.location}</Cell>
-                <ReceiptIcon onClick={() => handleOpenReceipt(e)}>📄</ReceiptIcon>
+
+                <ReceiptIcon onClick={() => handleOpenReceipt(e)}>
+                  📄
+                </ReceiptIcon>
               </DataRow>
 
               {e.memo && <Tooltip>{e.memo}</Tooltip>}
@@ -388,5 +380,4 @@ const FilterButton = styled.button`
   transition: all 0.2s ease;
   &:hover {
     background: ${(props) => (props.active ? "#1a5be6" : "#d0e2ff")};
-  }
-`;
+  }`;
