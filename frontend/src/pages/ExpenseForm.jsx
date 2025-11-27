@@ -44,8 +44,8 @@ export default function ExpenseForm() {
 
       const groupData = await groupRes.json();
       const memberList = groupData?.data?.members ?? [];
-      const name = groupData?.data?.group?.name;
-
+      const name = groupData?.data?.name;
+      
       setMembers(memberList);
       if (name) setGroupName(name);
 
