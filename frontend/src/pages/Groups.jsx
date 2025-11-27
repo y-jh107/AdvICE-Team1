@@ -293,9 +293,13 @@ function Groups() {
   }, []); 
 
   const handleMoreClick = () => {
-    const isAllVisible = visibleCount >= allTravelList.length;
-    setVisibleCount(isAllVisible ? ITEMS_PER_LOAD : prev => prev + ITEMS_PER_LOAD);
+    if (visibleCount >= allTravelList.length) {
+      setVisibleCount(ITEMS_PER_LOAD); // 접기
+    } else {
+      setVisibleCount(prev => prev + ITEMS_PER_LOAD); // 더보기
+    }
   };
+
 
   const handleCloseModal = () => {
     clearTimeout(hoverTimerRef.current);
@@ -339,13 +343,16 @@ function Groups() {
               
               // 이미지 처리 로직
               let imageSrc = null;
-              if (travel.image) {
+              if (travel.image && travel.image !== "null" && travel.image !== "") {
                 if (travel.image.startsWith('http') || travel.image.startsWith('data:')) {
                   imageSrc = travel.image;
                 } else {
                   imageSrc = `data:image/jpeg;base64,${travel.image}`;
-                }
               }
+            } else {
+              imageSrc = defaultImage; // 이미지 없으면 기본 이미지
+            }
+
 
               return (
                 <Link 
@@ -358,11 +365,8 @@ function Groups() {
                     onMouseLeave={handleMouseLeave}
                   >
                     {/* [수정됨] 이미지가 있으면 그 이미지를, 없으면 import한 기본 이미지를 보여줍니다. */}
-                    {/* OR 연산자 (||)를 사용하여 imageSrc가 없을 때 defaultImage를 사용합니다. */}
-                    <CardImage 
-                      src={imageSrc || defaultImage} 
-                      alt={travel.name} 
-                    />
+                    {/* OR 연산자 (||)를 사용하여 imageSrc가 없을 때 기본 이미지를 사용합니다. */}
+                    <CardImage src={imageSrc} alt={travel.name} />
                     
                     <h3>{travel.name}</h3>
                     <p>{travel.description}</p>

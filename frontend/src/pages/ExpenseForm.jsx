@@ -18,10 +18,7 @@ export default function ExpenseForm() {
 
   const [showModal, setShowModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  
-  // [수정] 선택된 지출 ID 상태 추가
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
-  
   const [receiptImgData, setReceiptImgData] = useState(null);
   const [infoMessage, setInfoMessage] = useState("");
 
@@ -32,14 +29,13 @@ export default function ExpenseForm() {
   const fetchGroupData = async () => {
     if (!accessToken) {
       setMembers([]);
-      setExpenses([]); 
+      setExpenses([]);
       setGroupName("여행");
       setInfoMessage("로그인 후 실제 지출 내역을 확인할 수 있습니다.");
       return;
     }
 
     try {
-      // 그룹 정보
       const groupRes = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -53,7 +49,6 @@ export default function ExpenseForm() {
       setMembers(memberList);
       if (name) setGroupName(name);
 
-      // 지출 정보
       const expenseRes = await fetch(
         `${API_BASE_URL}/groups/${groupId}/expenses`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -64,24 +59,33 @@ export default function ExpenseForm() {
       const expenseData = await expenseRes.json();
       const list = expenseData?.data ?? [];
 
-      const normalized = list.map((it) => ({
-        id: it.expenseId ?? it.id,
-        date: (it.spentAt ?? "").slice(0, 10).replace(/-/g, "."),
-        name: it.name,
-        totalAmount: it.amount,
-        myAmount: it.myAmount ?? 0,
-        location: it.location,
-        memo: it.memo ?? "",
-        payment: it.payment ?? "card",
-        receiptId: it.receiptId || null,
-      }));
+      /** 수정: participants 기반 myAmount 정확히 매핑 */
+      const normalized = list.map((it) => {
+        // 내 참여자 정보 찾기
+        const myParticipant = it.participants?.find(
+          (p) => p.userId === user?.id
+        );
+
+        return {
+          id: it.expenseId ?? it.id,
+          date: (it.spentAt ?? "").slice(0, 10).replace(/-/g, "."),
+          name: it.name,
+          totalAmount: it.amount,
+          myAmount: myParticipant?.myAmount ?? 0,
+
+          location: it.location,
+          memo: it.memo ?? "",
+          payment: it.payment?.toLowerCase?.() ?? "card",
+          receiptId: it.receiptId || null,
+        };
+      });
 
       setExpenses(normalized);
       setInfoMessage("");
 
     } catch (err) {
       console.error(err);
-      setExpenses([]); 
+      setExpenses([]);
       setMembers([]);
       setGroupName("여행");
       setInfoMessage(err.message);
@@ -93,7 +97,6 @@ export default function ExpenseForm() {
     fetchGroupData();
   }, [groupId]);
 
-  /** 영수증 이미지 불러오기 */
   const fetchReceiptImage = async (expenseId, receiptId) => {
     if (!receiptId) {
       alert("등록된 영수증이 없습니다.");
@@ -101,9 +104,10 @@ export default function ExpenseForm() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses/${expenseId}/receipts/${receiptId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${groupId}/expense/${expenseId}/receipts`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
 
       const json = await res.json();
 
@@ -116,10 +120,9 @@ export default function ExpenseForm() {
       const imageString = json.data?.receipt?.image;
 
       if (imageString) {
-        const formatted =
-          imageString.startsWith("http")
-            ? imageString
-            : `data:image/jpeg;base64,${imageString}`;
+        const formatted = imageString.startsWith("http")
+          ? imageString
+          : `data:image/jpeg;base64,${imageString}`;
 
         setReceiptImgData(formatted);
         setShowReceiptModal(true);
@@ -132,12 +135,10 @@ export default function ExpenseForm() {
     }
   };
 
-  // [수정] 영수증 모달 열 때 ID 저장
   const handleOpenReceipt = (expense) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
-    
     if (expense.receiptId) {
-      setSelectedExpenseId(expense.id); // <--- 이 부분 추가됨
+      setSelectedExpenseId(expense.id);
       fetchReceiptImage(expense.id, expense.receiptId);
     } else {
       alert("등록된 영수증이 없습니다.");
@@ -230,7 +231,6 @@ export default function ExpenseForm() {
         </ModalOverlay>
       )}
 
-      {/* [수정] expenseId 전달 및 닫을 때 초기화 */}
       {showReceiptModal && (
         <ModalOverlay>
           <ReceiptModal
@@ -263,10 +263,6 @@ const TopRow = styled.div`
   display: flex;
   justify-content: space-between;
   margin-bottom: 15px;
-`;
-const Select = styled.select`
-  padding: 8px;
-  border-radius: 6px;
 `;
 const AddButton = styled.button`
   background: #226cff;
@@ -372,7 +368,6 @@ const InfoMessage = styled.p`
   margin-bottom: 10px;
   font-weight: normal;
 `;
-
 const FilterButtonGroup = styled.div`
   display: flex;
   background: #e7f0ff;
@@ -381,7 +376,6 @@ const FilterButtonGroup = styled.div`
   gap: 4px;
   height: fit-content;
 `;
-
 const FilterButton = styled.button`
   background: ${(props) => (props.active ? "#226cff" : "transparent")};
   color: ${(props) => (props.active ? "white" : "#226cff")};
@@ -392,7 +386,6 @@ const FilterButton = styled.button`
   font-weight: 500;
   font-size: 14px;
   transition: all 0.2s ease;
-
   &:hover {
     background: ${(props) => (props.active ? "#1a5be6" : "#d0e2ff")};
   }

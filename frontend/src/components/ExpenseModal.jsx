@@ -3,7 +3,7 @@ import styled from "styled-components";
 import axios from "axios";
 import Button from "./Button";
 import ReceiptModal from "./ReceiptModal";
-import ExchangeRateModal from "./ExchangeRateModal"; // 그래프 모달
+import ExchangeRateModal from "./ExchangeRateModal"; 
 import { API_BASE_URL } from "../config";
 
 // [1] UUID 생성 (중복 방지 키)
@@ -28,22 +28,20 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
   const accessToken = localStorage.getItem("accessToken");
 
   const [name, setName] = useState("");
-  const [spentAt, setSpentAt] = useState("");
+  // 날짜가 비어있으면 오늘 날짜를 기본값으로 사용 (API 요청 시 필요)
+  const [spentAt, setSpentAt] = useState(getTodayISO());
   
-  // amount: 사용자가 입력하는 금액 (외화일 수 있음)
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const [payment, setPayment] = useState("card");
   
-  // 통화 및 환율
   const [currency, setCurrency] = useState("KRW");
   const [currentRate, setCurrentRate] = useState(1); 
 
   const [splitMode, setSplitMode] = useState("PERCENT");
   const [selectedMembers, setSelectedMembers] = useState({});
 
-  // 모달 상태
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [tempReceiptFile, setTempReceiptFile] = useState(null);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
@@ -57,7 +55,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     setSelectedMembers(obj);
   }, [members]);
 
-  // [핵심] 환율 조회 (API 배열 응답 처리)
+  // [수정됨] 환율 조회 로직 개선 (API 응답 데이터 구조 반영)
   useEffect(() => {
     if (currency === "KRW") {
       setCurrentRate(1);
@@ -66,22 +64,52 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const fetchRate = async () => {
       try {
+        // [수정 1] JPY, IDR 등 100단위 통화 처리
+        let querySymbol = currency;
+        const is100Unit = ["JPY", "IDR"].includes(currency);
+        if (is100Unit) {
+          querySymbol = `${currency}(100)`;
+        }
+
+        const dateParam = spentAt || getTodayISO();
+
+        // API 호출
         const res = await axios.get(`${API_BASE_URL}/fx`, {
-          params: { date: getTodayISO(), base: "KRW", symbols: currency }
+          params: { date: dateParam, base: "KRW" } 
         });
         
-        // 응답: { code: "SU", data: [ {date: "2025-11-XX", rate: 1390.5}, ... ] }
-        const list = res.data.data;
+        // [수정 2] 응답 데이터 구조 유연하게 처리 (res.data 자체가 배열일 수도, wrapped일 수도 있음)
+        const responseData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        
+        if (responseData && responseData.length > 0) {
+          // [수정 3] 배열에서 현재 선택된 통화(cur_unit)와 일치하는 항목 찾기
+          const targetItem = responseData.find(item => item.cur_unit === querySymbol);
 
-        if (list && list.length > 0) {
-          // 가장 최근 데이터 사용 (배열의 마지막 요소)
-          const latestData = list[list.length - 1];
-          const rateNum = latestData.rate;
+          if (targetItem) {
+            // [수정 4] 필드명 deal_bas_r(매매기준율) 사용 및 콤마 제거
+            let rateVal = targetItem.deal_bas_r; 
 
-          if (rateNum > 0) setCurrentRate(rateNum);
-          else setCurrentRate(1);
+            if (typeof rateVal === "string") {
+              rateVal = parseFloat(rateVal.replace(/,/g, ""));
+            }
+
+            // 100단위 통화 보정 (1단위 가격으로 변환)
+            if (is100Unit) {
+              rateVal = rateVal / 100;
+            }
+
+            if (rateVal > 0) {
+              setCurrentRate(rateVal);
+            } else {
+              setCurrentRate(1);
+            }
+          } else {
+            console.warn(`${currency} 환율 데이터 없음 (목록에 없음)`);
+            setCurrentRate(1);
+          }
         } else {
-          setCurrentRate(1); // 데이터 없음
+          console.warn(`${currency} 환율 데이터 없음 (빈 배열)`);
+          setCurrentRate(1); 
         }
       } catch (err) {
         console.error("환율 조회 실패", err);
@@ -89,7 +117,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
       }
     };
     fetchRate();
-  }, [currency]);
+  }, [currency, spentAt]);
 
   // 멤버 분배 로직
   const toggleMember = (id, checked) => {
@@ -117,12 +145,10 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
     return sum === 100;
   };
 
-  // [저장] 외화 -> 원화 변환 후 전송
   const save = async () => {
     if (!name || !spentAt || !amount) return alert("필수 정보를 입력해주세요.");
     if (!validatePercent()) return alert("참여자 퍼센트 합계는 100이어야 합니다.");
 
-    // 원화 환산 (소수점 버림)
     const finalAmountKRW = Math.floor(Number(amount) * currentRate);
 
     const participants = Object.entries(selectedMembers)
@@ -131,18 +157,17 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
     const body = {
       name, spentAt, 
-      amount: finalAmountKRW, // 원화 금액 전송
+      amount: finalAmountKRW,
       payment, location, memo, splitMode, participants,
       currency: "KRW" 
     };
 
     try {
       if (!accessToken) {
-        alert(`[테스트 저장]\n입력: ${amount} ${currency}\n환율: ${currentRate}\n저장액: ${finalAmountKRW.toLocaleString()}원`);
+        alert(`[테스트 저장]\n입력: ${amount} ${currency}\n환율(1단위): ${currentRate}\n저장액: ${finalAmountKRW.toLocaleString()}원`);
         onSuccess?.(); onClose(); return;
       }
 
-      // 1. 지출 생성
       const res = await fetch(`${API_BASE_URL}/groups/${groupId}/expenses`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -153,7 +178,6 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
 
       const newExpenseId = json.data?.expenseId || json.data?.id;
 
-      // 2. 영수증 업로드 (있을 경우)
       if (newExpenseId && tempReceiptFile) {
         const formData = new FormData();
         formData.append("image", tempReceiptFile);
@@ -188,7 +212,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           <ScrollableArea>
             <InputGroup>
               <label>지출명</label>
-              <input type="text" placeholder="예: 항공권" value={name} onChange={(e) => setName(e.target.value)} />
+              <input type="text" placeholder="예: 야시장" value={name} onChange={(e) => setName(e.target.value)} />
             </InputGroup>
 
             <InputGroup>
@@ -214,20 +238,24 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
                   <option value="KRW">🇰🇷 원 (KRW)</option>
                   <option value="JPY">🇯🇵 엔 (JPY)</option>
                   <option value="USD">🇺🇸 달러 (USD)</option>
-                  <option value="CNY">🇨🇳 위안 (CNY)</option>
+                  {/* [수정] API 데이터 상 위안화 코드는 CNH임 */}
+                  <option value="CNH">🇨🇳 위안 (CNH)</option>
                   <option value="HKD">🇭🇰 홍콩 (HKD)</option>
-                  <option value="TWD">🇹🇼 대만 (TWD)</option>
+                  <option value="SGD">🇸🇬 싱가포르 (SGD)</option>
                   <option value="THB">🇹🇭 바트 (THB)</option>
-                  <option value="VND">🇻🇳 동 (VND)</option>
+                  <option value="AUD">🇦🇺 호주 (AUD)</option>
                   <option value="EUR">🇪🇺 유로 (EUR)</option>
                 </CurrencySelect>
               </CurrencyContainer>
 
               {/* 환율 미리보기 */}
-              {currency !== "KRW" && amount && (
+              {currency !== "KRW" && (
                 <ConversionPreview>
-                  ≈ {(Math.floor(Number(amount) * currentRate)).toLocaleString()}원 
-                  <span className="rateInfo"> (적용 환율: {currentRate.toLocaleString()}원)</span>
+                  {amount ? `≈ ${(Math.floor(Number(amount) * currentRate)).toLocaleString()}원` : "금액을 입력하세요"}
+                  <div className="rateInfo">
+                    적용 환율: 1 {currency} = {currentRate.toLocaleString()} KRW
+                    {currentRate === 1 && <span style={{color:'red', marginLeft:'5px'}}>(환율 정보 없음)</span>}
+                  </div>
                 </ConversionPreview>
               )}
             </InputGroup>
@@ -248,7 +276,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
                   현금
                 </PaymentButton>
               </PaymentButtonGroup>
-              <label>장소</label>
+              <label style={{marginTop: '10px'}}>장소</label>
               <input type="text" placeholder="예: 야시장" value={location} onChange={(e) => setLocation(e.target.value)} />
             </InputGroup>
 
@@ -277,17 +305,17 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
           </ScrollableArea>
 
           <ModalFooter>
-            {/* [상단] 환율 그래프 버튼 (꽉 찬 너비) */}
+            {/* [상단] 환율 그래프 버튼 */}
             {currency !== "KRW" && (
               <WhiteButton 
                 onClick={() => setShowExchangeModal(true)} 
                 style={{ width: '100%', marginBottom: '10px' }}
               >
-                📈 {currency} 환율 그래프 보기
+                📈 {currency} 환율 추세 확인
               </WhiteButton>
             )}
 
-            {/* [하단] 저장 & 영수증 버튼 (가로 배치) */}
+            {/* [하단] 저장 & 영수증 버튼 */}
             <ButtonRow>
               <Button text="저장" onClick={save} />
               <WhiteButton onClick={() => setShowReceiptModal(true)} isSelected={!!tempReceiptFile}>
@@ -323,10 +351,7 @@ const ModalHeader = styled.div` background-color:#3b82f6; color:white; padding:1
 const ScrollableArea = styled.div` padding:1.5rem; overflow-y:auto; max-height:65vh; display:flex; flex-direction:column; gap:1.2rem; `;
 const ModalFooter = styled.div` padding: 1rem 1.5rem 1.5rem; display: flex; flex-direction: column; `;
 
-const ButtonRow = styled.div` 
-  display: flex; gap: 10px; width: 100%; 
-  & > * { flex: 1; width: auto; } 
-`;
+const ButtonRow = styled.div` display: flex; gap: 10px; width: 100%; & > * { flex: 1; width: auto; } `;
 
 const InputGroup = styled.div`
   display:flex; flex-direction:column;
@@ -343,8 +368,8 @@ const ResetButton = styled.button` position: absolute; right: 10px; top: 50%; tr
 const CurrencySelect = styled.select` padding: 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; min-width: 100px; cursor: pointer; &:focus { outline: none; border-color: #3b82f6; } `;
 
 const ConversionPreview = styled.div`
-  margin-top: 8px; font-size: 0.95rem; color: #2563eb; font-weight: normal; text-align: right;
-  .rateInfo { font-size: 0.8rem; color: #888; font-weight: normal; }
+  margin-top: 8px; font-size: 1.0rem; color: #2563eb; font-weight: bold; text-align: right;
+  .rateInfo { font-size: 0.8rem; color: #666; font-weight: normal; margin-top: 2px; }
 `;
 
 const Divider = styled.div` height:1px; background-color:#ddd; margin:0.5rem 0; `;
@@ -355,28 +380,5 @@ const EqualBadge = styled.div` background:#eaf0ff;padding:6px 8px;border-radius:
 const EqualRow = styled.div` margin-top:6px; display:flex; gap:8px; `;
 const WhiteButton = styled.button` width: 100%; padding: 10px 20px; background-color: ${props => props.isSelected ? '#e3efff' : 'white'}; color: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-size: 16px; font-weight: normal; cursor: pointer; transition: all 0.2s; &:hover { background-color: #f0f7ff; } `;
 
-const PaymentButtonGroup = styled.div`
-  display: flex;
-  background: #f8f9ff;
-  border: 1.5px solid #e2e8ff;
-  border-radius: 16px;
-  padding: 6px;
-  gap: 6px;
-`;
-
-const PaymentButton = styled.button`
-  flex: 1;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 300;
-  background: ${(props) => (props.active ? "#226cff" : "transparent")};
-  color: ${(props) => (props.active ? "white" : "#444")};
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${(props) => (props.active ? "#1a5be6" : "#eef1ff")};
-  }
-`;
+const PaymentButtonGroup = styled.div` display: flex; background: #f8f9ff; border: 1.5px solid #e2e8ff; border-radius: 16px; padding: 6px; gap: 6px; `;
+const PaymentButton = styled.button` flex: 1; padding: 12px 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 300; background: ${(props) => (props.active ? "#226cff" : "transparent")}; color: ${(props) => (props.active ? "white" : "#444")}; cursor: pointer; transition: all 0.2s ease; &:hover { background: ${(props) => (props.active ? "#1a5be6" : "#eef1ff")}; } `;
