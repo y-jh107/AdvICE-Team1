@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { API_BASE_URL } from "../config.js";
 
 // --- [새로 추가됨] 로컬 기본 이미지 Import ---
-import defaultImage from '../assets/map-location.png';
+const defaultImage = "/map-location.png";
 
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`

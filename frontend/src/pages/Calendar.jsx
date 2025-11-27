@@ -14,6 +14,7 @@ const formatDateString = (date) => {
   return `${year}-${month}-${day}`; 
 };
 
+// 시간 표시 함수는 사용하지 않지만 헬퍼로 남겨둠
 const formatDateTime = (isoString) => {
   if (!isoString) return "";
   const date = new Date(isoString);
@@ -122,7 +123,6 @@ function Calendar() {
   
   const [scheduleInput, setScheduleInput] = useState("");
   const [dateInput, setDateInput] = useState(() => formatDateString(new Date()));
-  const [timeInput, setTimeInput] = useState("09:00");
   const [placeInput, setPlaceInput] = useState("");
 
   const [selectedDetail, setSelectedDetail] = useState(null);
@@ -146,7 +146,6 @@ function Calendar() {
         const json = await response.json();
 
         if (json.code === "SU") {
-          // [수정 포인트] 스크린샷에 따르면 items 안에 배열이 있습니다.
           const list = json.data.items || []; 
           
           const currentYear = currentDate.getFullYear();
@@ -154,10 +153,12 @@ function Calendar() {
           const newSchedules = {};
 
           list.forEach((item) => {
-            const itemDate = new Date(item.date);
+            // [수정 1] item.date가 없으면 item.spentAt 사용 (지출 데이터 대응)
+            const rawDate = item.date || item.spentAt;
+            const itemDate = new Date(rawDate);
+            
             if (isNaN(itemDate.getTime())) return;
 
-            // 현재 달력의 연/월과 일치하는지 확인
             if (itemDate.getFullYear() === currentYear && itemDate.getMonth() === currentMonth) {
               const day = itemDate.getDate();
               if (!newSchedules[day]) newSchedules[day] = [];
@@ -166,7 +167,7 @@ function Calendar() {
                 id: item.id, 
                 title: item.name,
                 type: item.type || 'event', 
-                date: item.date,
+                date: rawDate, // 수정된 날짜 필드 사용
                 color: item.type === 'expense' ? SCHEDULE_COLORS.expense : SCHEDULE_COLORS.event
               });
             }
@@ -184,14 +185,16 @@ function Calendar() {
   }, [currentDate, groupId]);
 
   const handleSave = async () => {
-    if (!scheduleInput || !dateInput || !timeInput) {
-      alert("일정, 날짜, 시간을 모두 입력해주세요."); return;
+    if (!scheduleInput || !dateInput) {
+      alert("일정과 날짜를 입력해주세요."); return;
     }
     if (!groupId) { alert("모임 정보를 찾을 수 없습니다."); return; }
 
     setIsLoading(true);
     const accessToken = localStorage.getItem("accessToken");
-    const formattedDate = `${dateInput}T${timeInput}:00+09:00`;
+    
+    // 시간은 00:00:00으로 고정
+    const formattedDate = `${dateInput}T00:00:00+09:00`;
 
     try {
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}/calendar/event`, {
@@ -264,11 +267,15 @@ function Calendar() {
       const json = await response.json();
 
       if (json.code === "SU") {
-        // 상세 조회 시에도 items 같은 구조가 섞일 수 있으니 방어적으로 작성
         const detailData = json.data.event || json.data.expense || json.data;
         
         if (detailData) {
-          setSelectedDetail(detailData); 
+          // [수정 2] 상세 정보에서도 date가 없으면 spentAt을 date로 통일해서 저장
+          const normalizedDetail = {
+            ...detailData,
+            date: detailData.date || detailData.spentAt
+          };
+          setSelectedDetail(normalizedDetail); 
           setIsDetailModalOpen(true);
         } else {
           console.warn("데이터 구조 확인 필요:", json.data);
@@ -320,7 +327,6 @@ function Calendar() {
   const handleOpenAddModal = () => {
     const first = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     setDateInput(formatDateString(first)); 
-    setTimeInput("09:00");
     setScheduleInput("");
     setPlaceInput("");
     setIsAddModalOpen(true);
@@ -380,11 +386,6 @@ function Calendar() {
                   onChange={(e) => setDateInput(e.target.value)} />
               </InputGroup>
               <InputGroup>
-                <label>시간</label>
-                <input type="time" value={timeInput}
-                  onChange={(e) => setTimeInput(e.target.value)} />
-              </InputGroup>
-              <InputGroup>
                 <label>장소</label>
                 <input type="text" placeholder="예: 란나 민속 박물관" value={placeInput}
                   onChange={(e) => setPlaceInput(e.target.value)} />
@@ -408,7 +409,12 @@ function Calendar() {
               {isLoading ? ( <p style={{textAlign: 'center'}}>로딩 중...</p> ) : selectedDetail ? (
                 <>
                   <DetailText><span>이름:</span> {selectedDetail.name}</DetailText>
-                  <DetailText><span>일시:</span> {formatDateTime(selectedDetail.date)}</DetailText>
+                  
+                  {/* 날짜 표시 (시간 제외, normalizedDetail.date 사용) */}
+                  <DetailText>
+                    <span>일시:</span> {formatDateString(new Date(selectedDetail.date))}
+                  </DetailText>
+
                   {selectedDetail.location && (
                     <DetailText><span>장소:</span> {selectedDetail.location}</DetailText>
                   )}

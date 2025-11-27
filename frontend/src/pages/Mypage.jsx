@@ -283,7 +283,7 @@ function Mypage() {
           </ListCard>
           
           <ExchangePanel>
-            <h3>환율 계산기</h3>
+            <h3>환율</h3>
             
             <ExchangeField>
               <InfoLabel>통화 선택</InfoLabel>
