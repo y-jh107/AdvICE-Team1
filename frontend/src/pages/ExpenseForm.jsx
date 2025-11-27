@@ -61,7 +61,7 @@ export default function ExpenseForm() {
 
       const normalized = list.map((it) => {
         const myParticipant = it.participants?.find(
-          p => Number(p.userId) === Number(user?.id)
+          (p) => Number(p.userId) === Number(user?.id)
         );
 
         return {
@@ -69,11 +69,10 @@ export default function ExpenseForm() {
           date: (it.spentAt ?? "").slice(0, 10).replace(/-/g, "."),
           name: it.name,
           totalAmount: it.amount,
-          myAmount: myParticipant?.myAmount ?? 0,
+          myAmount: Number(myParticipant?.myAmount ?? 0),
           location: it.location,
           memo: it.memo ?? "",
           payment: it.payment?.toLowerCase?.() ?? "card",
-          /** receiptId 제거됨 */
         };
       });
 
@@ -91,15 +90,18 @@ export default function ExpenseForm() {
   useEffect(() => {
     if (!groupId) return;
     fetchGroupData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
-  /** 영수증 조회 — receiptId 사용 안함 */
+  /** 영수증 조회 */
   const fetchReceiptImage = async (expenseId) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
 
     try {
+      // 명세서 상 URL은 'expense' (단수), 코드는 'expenses' (복수)일 수 있으니 
+      // 현재 잘 동작하는 URL을 유지합니다.
       const res = await fetch(
-        `${API_BASE_URL}/groups/${groupId}/expense/${expenseId}/receipts`,
+        `${API_BASE_URL}/groups/${groupId}/expenses/${expenseId}/receipts`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -111,13 +113,13 @@ export default function ExpenseForm() {
 
       if (!res.ok) throw new Error(json.message || "영수증 불러오기 실패");
 
-      const imageString = json.data?.receipt?.image;
+      // [핵심 수정] 명세서(receipt.image) 또는 실제 서버(image) 둘 다 체크
+      // 우선순위: 명세서 구조 -> 실제 서버 구조
+      const imageString = json.data?.receipt?.image || json.data?.image;
 
-      if (imageString) {
-        const formatted = imageString.startsWith("http")
-          ? imageString
-          : `data:image/jpeg;base64,${imageString}`;
-
+      if (typeof imageString === "string" && imageString.length > 0) {
+        const sanitized = imageString.replace(/\s/g, ""); // 공백 제거
+        const formatted = `data:image/jpeg;base64,${sanitized}`;
         setReceiptImgData(formatted);
         setShowReceiptModal(true);
       } else {
@@ -129,7 +131,6 @@ export default function ExpenseForm() {
     }
   };
 
-  /** receiptId 없이 바로 실행 */
   const handleOpenReceipt = (expense) => {
     if (!accessToken) return alert("로그인이 필요합니다.");
     setSelectedExpenseId(expense.id);
@@ -149,14 +150,15 @@ export default function ExpenseForm() {
 
       <TopRow>
         <FilterButtonGroup>
+          {/* styled-components 경고 방지를 위해 $active로 변경 */}
           <FilterButton
-            active={paymentFilter === "card"}
+            $active={paymentFilter === "card"}
             onClick={() => setPaymentFilter("card")}
           >
             카드
           </FilterButton>
           <FilterButton
-            active={paymentFilter === "cash"}
+            $active={paymentFilter === "cash"}
             onClick={() => setPaymentFilter("cash")}
           >
             현금
@@ -368,9 +370,11 @@ const FilterButtonGroup = styled.div`
   gap: 4px;
   height: fit-content;
 `;
+
+// [수정] active -> $active 로 변경 (DOM에 불필요한 속성 전달 방지)
 const FilterButton = styled.button`
-  background: ${(props) => (props.active ? "#226cff" : "transparent")};
-  color: ${(props) => (props.active ? "white" : "#226cff")};
+  background: ${(props) => (props.$active ? "#226cff" : "transparent")};
+  color: ${(props) => (props.$active ? "white" : "#226cff")};
   border: none;
   padding: 9px 20px;
   border-radius: 6px;
@@ -379,5 +383,6 @@ const FilterButton = styled.button`
   font-size: 14px;
   transition: all 0.2s ease;
   &:hover {
-    background: ${(props) => (props.active ? "#1a5be6" : "#d0e2ff")};
-  }`;
+    background: ${(props) => (props.$active ? "#1a5be6" : "#d0e2ff")};
+  }
+`;

@@ -5,9 +5,10 @@ import Footer from '../components/Footer';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from "../config.js";
+import defaultImage from "../assets/map-location.png";
 
 // --- [새로 추가됨] 로컬 기본 이미지 Import ---
-const defaultImage = "/map-location.png";
+//const defaultImage = "/map-location.png";
 
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
