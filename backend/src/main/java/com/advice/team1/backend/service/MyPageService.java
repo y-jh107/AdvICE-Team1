@@ -2,6 +2,7 @@ package com.advice.team1.backend.service;
 
 import com.advice.team1.backend.domain.dto.*;
 import com.advice.team1.backend.domain.entity.User;
+import com.advice.team1.backend.repository.ExpenseParticipantRepository;
 import com.advice.team1.backend.repository.ExpenseRepository;
 import com.advice.team1.backend.repository.GroupMemberRepository;
 import com.advice.team1.backend.repository.UserRepository;
@@ -22,6 +23,7 @@ public class MyPageService {
     private final ExpenseRepository expenseRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
+    private final ExpenseParticipantRepository expenseParticipantRepository;
 
     /**
      * requestUserId: 요청한 유저의 ID
@@ -52,12 +54,12 @@ public class MyPageService {
         LocalDate now = LocalDate.now();
         LocalDate oneWeekAgo = now.minusDays(30);
 
-        List<ExpensesByDateItemDto> items = expenseRepository
-                .expensesByDate(targetUserId, oneWeekAgo, now)
+        List<ExpensesByDateItemDto> items = expenseParticipantRepository
+                .findByUser_Id(targetUserId)
                 .stream()
                 .map(p -> new ExpensesByDateItemDto(
-                        p.getD(),
-                        p.getTotal()
+                        p.getExpense().getSpentAt(),
+                        p.getShareAmount()
                 ))
                 .toList();
 
