@@ -11,6 +11,9 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 100단위 통화 여부 판단
+  const is100Unit = ["JPY", "IDR"].includes(currency);
+
   useEffect(() => {
     if (!isOpen) return;
     if (currency === "KRW") {
@@ -21,7 +24,6 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
     fetchWeeklyRates();
   }, [isOpen, currency]);
 
-  // 오늘 날짜 구하기 (YYYY-MM-DD)
   const getTodayDate = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -35,41 +37,28 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
     setError(null);
     
     try {
-      // 1. [기존 로직 유지] 100단위 통화 심볼 처리 (JPY, IDR)
       let querySymbol = currency;
-      const is100Unit = ["JPY", "IDR"].includes(currency);
       if (is100Unit) {
         querySymbol = `${currency}(100)`;
       }
 
-      // 2. [수정됨] API 호출 (반복문 제거 -> 1회 호출로 변경)
-      // querySymbol(예: JPY(100))을 그대로 서버에 전달
       const response = await axios.get(`${API_BASE_URL}/fx`, {
         params: {
-          date: getTodayDate(), // 오늘 날짜 기준
-          symbols: querySymbol, // 변환된 심볼 사용 (건드리지 않음)
+          date: getTodayDate(), 
+          symbols: querySymbol, 
           base: "KRW"
         }
       });
 
       const responseBody = response.data;
 
-      // 3. 응답 처리
       if (!responseBody) throw new Error("서버 응답이 없습니다.");
 
       if (responseBody.code === "SU") {
         const formattedData = responseBody.data.map(item => {
-          // 서버에서 받은 값 (콤마 등은 백엔드가 처리했거나 숫자형으로 옴)
-          let rateVal = item.rate;
-
-          // 4. [기존 로직 유지] 100단위 통화라면 1단위로 보정
-          if (is100Unit) {
-            rateVal = rateVal / 100;
-          }
-
           return {
-            date: item.date.substring(5).replace('-', '.'), // MM.DD 포맷팅
-            rate: rateVal
+            date: item.date.substring(5).replace('-', '.'), 
+            rate: item.rate 
           };
         });
 
@@ -79,7 +68,6 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
           setChartData(formattedData);
         }
       } else {
-        // 에러 코드 처리 (AE, TO 등)
         setError(responseBody.message || "환율 정보를 불러올 수 없습니다.");
       }
 
@@ -97,7 +85,7 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
     <Overlay onClick={onClose}>
       <Container onClick={(e) => e.stopPropagation()}>
         <Header>
-          <Title>{currency} 환율 추이 (최근 1주일)</Title>
+          <Title>{is100Unit ? `${currency}(100)` : currency} 환율 추이</Title>
           <CloseButton onClick={onClose}>&times;</CloseButton>
         </Header>
         
@@ -109,40 +97,50 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
           ) : error ? (
             <ErrorMessage>{error}</ErrorMessage>
           ) : (
-            <GraphWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    dy={10} 
-                  />
-                  <YAxis 
-                    domain={['auto', 'auto']} 
-                    tick={{ fontSize: 11 }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    width={40}
-                    tickFormatter={(val) => Math.floor(val).toLocaleString()} 
-                  />
-                  <Tooltip 
-                    formatter={(val) => [`${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}원`, '환율']}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="rate" 
-                    stroke="#3b82f6" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }} 
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </GraphWrapper>
+            <>
+              <GraphWrapper>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      dy={10} 
+                    />
+                    <YAxis 
+                      domain={['auto', 'auto']} 
+                      tick={{ fontSize: 11 }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      width={40}
+                      tickFormatter={(val) => Math.floor(val).toLocaleString()} 
+                    />
+                    <Tooltip 
+                      formatter={(val) => [
+                        `${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}원`, 
+                        is100Unit ? `${currency}(100)` : '환율'
+                      ]}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rate" 
+                      stroke="#3b82f6" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }} 
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </GraphWrapper>
+              
+              {/* [추가됨] 하단 설명 문구 */}
+              <Description>
+                * 위 그래프는 <strong>{is100Unit ? "100" : "1"} {currency}</strong>당 원화(KRW) 환율 기준입니다.
+              </Description>
+            </>
           )}
         </Body>
       </Container>
@@ -162,3 +160,15 @@ const Body = styled.div` padding: 24px; display: flex; flex-direction: column; a
 const GraphWrapper = styled.div` width: 100%; height: 250px; margin-bottom: 10px; `;
 const Message = styled.div` color: #666; font-size: 0.95rem; `;
 const ErrorMessage = styled.div` color: #dc3545; font-size: 0.95rem; `;
+
+// [추가됨] 설명 문구 스타일
+const Description = styled.div`
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #888;
+  text-align: center;
+  strong {
+    font-weight: 600;
+    color: #555;
+  }
+`;

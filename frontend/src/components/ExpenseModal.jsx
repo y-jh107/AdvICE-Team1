@@ -74,7 +74,7 @@ export default function ExpenseModal({ groupId, members = [], onClose, onSuccess
         const dateParam = spentAt || getTodayISO();
 
         // 2. API 호출 (명세서 방식: /api/fx)
-        const res = await axios.get(`${API_BASE_URL}/api/fx`, {
+        const res = await axios.get(`${API_BASE_URL}/fx`, {
           params: { 
             date: dateParam, 
             symbols: querySymbol, // 처리된 심볼 전달 (JPY(100))
