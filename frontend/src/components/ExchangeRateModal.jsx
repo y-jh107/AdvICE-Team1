@@ -44,7 +44,7 @@ const ExchangeRateModal = ({ isOpen, onClose, currency = "USD" }) => {
 
       // 2. [수정됨] API 호출 (반복문 제거 -> 1회 호출로 변경)
       // querySymbol(예: JPY(100))을 그대로 서버에 전달
-      const response = await axios.get(`${API_BASE_URL}/api/fx`, {
+      const response = await axios.get(`${API_BASE_URL}/fx`, {
         params: {
           date: getTodayDate(), // 오늘 날짜 기준
           symbols: querySymbol, // 변환된 심볼 사용 (건드리지 않음)

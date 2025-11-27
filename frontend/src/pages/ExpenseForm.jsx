@@ -69,7 +69,7 @@ export default function ExpenseForm() {
           date: (it.spentAt ?? "").slice(0, 10).replace(/-/g, "."),
           name: it.name,
           totalAmount: it.amount,
-          myAmount: myParticipant?.myAmount ?? 0,
+          myAmount: Number(myParticipant?.myAmount ?? 0),
           location: it.location,
           memo: it.memo ?? "",
           payment: it.payment?.toLowerCase?.() ?? "card",
@@ -99,7 +99,7 @@ export default function ExpenseForm() {
 
     try {
       const res = await fetch(
-        `${API_BASE_URL}/groups/${groupId}/expense/${expenseId}/receipts`,
+        `${API_BASE_URL}/groups/${groupId}/expenses/${expenseId}/receipts`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -113,14 +113,13 @@ export default function ExpenseForm() {
 
       const imageString = json.data?.receipt?.image;
 
-      if (imageString) {
-        const formatted = imageString.startsWith("http")
-          ? imageString
-          : `data:image/jpeg;base64,${imageString}`;
+        if (typeof imageString === "string" && imageString.length > 0) {
+            const sanitized = imageString.replace(/\s/g, ""); // 공백 제거 필수
 
-        setReceiptImgData(formatted);
-        setShowReceiptModal(true);
-      } else {
+            const formatted = `data:image/jpeg;base64,${sanitized}`;
+            setReceiptImgData(formatted);
+            setShowReceiptModal(true);
+        } else {
         alert("영수증 이미지가 없습니다.");
       }
     } catch (err) {
