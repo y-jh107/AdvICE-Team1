@@ -130,7 +130,7 @@ export default function ExpenseForm() {
       }
     } catch (err) {
       console.error(err);
-      alert("영수증 불러오기 오류");
+      alert("첨부된 영수증이 없습니다");
     }
   };
 

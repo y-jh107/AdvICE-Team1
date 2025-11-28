@@ -26,7 +26,7 @@ const Backdrop = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.2); // 배경을 조금 더 연하게 수정
+  background-color: rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -35,11 +35,11 @@ const Backdrop = styled.div`
 
 const ModalContainer = styled.div`
   width: 90%;
-  max-width: 650px; // 너비를 조금 더 넓힘
-  background-color: #f8f9fa; // 모달 배경을 아주 연한 회색으로 (박스가 흰색이라 대비됨)
+  max-width: 650px;
+  background-color: #f8f9fa;
   padding: 2.5rem 2rem; 
-  border-radius: 16px; // 둥근 모서리 강화
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); // 그림자 부드럽게
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   position: relative;
 `;
 
@@ -49,7 +49,7 @@ const CloseButtonWrapper = styled.div`
   right: 1rem;
 `;
 
-// --- [변경됨] 2. 모달 내용 스타일 (이미지 디자인 적용) ---
+// --- 2. 모달 내용 스타일 ---
 const DetailWrapper = styled.div`
   padding: 0;
   margin-top: 0; 
@@ -64,56 +64,49 @@ const Title = styled.h2`
   color: #333; 
 `;
 
-// 테이블 대신 리스트 컨테이너 사용
 const ListContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px; // 행(Row) 사이의 간격
+  gap: 12px;
   max-height: 400px;
-  overflow-y: auto; // 내용이 길어지면 스크롤
-  padding: 4px; // 스크롤바와 내용 겹침 방지
+  overflow-y: auto;
+  padding: 4px;
 `;
 
-// 각 멤버 한 줄 (Row)
 const ListItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px; // 박스 사이의 간격
+  gap: 10px;
 `;
 
-// 데이터가 들어가는 흰색 둥근 박스 (Cell 대체)
 const InfoBox = styled.div`
   background-color: white;
   border: 1px solid #e0e0e0;
-  border-radius: 8px; // 둥근 모서리
+  border-radius: 8px;
   padding: 12px 16px;
   font-size: 0.95rem;
   font-weight: 600;
   color: #333;
   display: flex;
   align-items: center;
-  justify-content: center; // 텍스트 가운데 정렬
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05); // 미세한 입체감
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   
-  // 내용이 넘칠 경우 처리
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
-  // flex-grow를 사용하여 비율 조정 (이미지 비율 참고)
-  // 이름(작게) : 이메일(넓게) : 금액(중간)
   flex: ${({ flex }) => flex || 1}; 
 `;
 
-// 금액 부분은 버튼처럼 보일 수도 있으므로 스타일 추가 (선택 사항)
 const AmountBox = styled(InfoBox)`
   font-weight: 700;
   color: #333;
   cursor: default;
 `;
 
-// --- 3. Groups 페이지 스타일 (기존 유지) ---
+// --- 3. Groups 페이지 스타일 ---
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -174,40 +167,72 @@ const InfoMessage = styled.p`
 
 const ITEMS_PER_LOAD = 3;
 
-// --- [변경됨] 5. 모달 컴포넌트 ---
-function TripDetailModal({ tripId }) { 
+// --- 4. 모달 내부 컨텐츠 컴포넌트 (로직 수정됨) ---
+function TripDetailModal({ tripId, onClose }) { 
   const [details, setDetails] = useState(null);
+  const [spendings, setSpendings] = useState({}); // userId별 합산 금액 저장
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!tripId) return; 
 
-    async function fetchTripDetails() {
+    async function fetchData() {
       setLoading(true);
       setError(null);
       setDetails(null); 
+      setSpendings({}); 
+
       try {
         const accessToken = localStorage.getItem("accessToken"); 
-        if (!accessToken) throw new Error("로그인이 필요합니다. (AR)");
+        if (!accessToken) throw new Error("로그인이 필요합니다.");
 
-        const response = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
+        const headers = {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        };
+
+        // 1. 그룹 상세 정보 호출
+        const groupResponse = await fetch(`${API_BASE_URL}/groups/${tripId}`, { 
             method: "GET",
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Accept': 'application/json'
-            }
+            headers: headers
         });
 
-        if (!response.ok) throw new Error(`HTTP 에러: ${response.status}`);
-        
-        const responseData = await response.json();
+        if (!groupResponse.ok) throw new Error(`그룹 정보 로딩 실패: ${groupResponse.status}`);
+        const groupData = await groupResponse.json();
 
-        if (responseData.code === "SU") {
-          setDetails(responseData.data); 
-        } else {
-          throw new Error(responseData.message || "알 수 없는 API 오류");
+        if (groupData.code !== "SU") {
+          throw new Error(groupData.message || "그룹 정보를 불러오지 못했습니다.");
         }
+
+        // 2. 그룹 지출 내역 호출 (금액 합산용)
+        const expenseResponse = await fetch(`${API_BASE_URL}/groups/${tripId}/expenses`, {
+            method: "GET",
+            headers: headers
+        });
+
+        if (!expenseResponse.ok) throw new Error(`지출 내역 로딩 실패: ${expenseResponse.status}`);
+        const expenseData = await expenseResponse.json();
+
+        // 3. 지출 내역 순회하며 userId별 myAmount 합산
+        const userTotalMap = {};
+
+        if (expenseData.code === "SU" && Array.isArray(expenseData.data)) {
+          expenseData.data.forEach(expense => {
+            if (expense.participants && Array.isArray(expense.participants)) {
+              expense.participants.forEach(p => {
+                // p.userId가 존재하면 해당 유저의 금액 누적
+                if (p.userId) {
+                  const currentTotal = userTotalMap[p.userId] || 0;
+                  userTotalMap[p.userId] = currentTotal + (p.myAmount || 0);
+                }
+              });
+            }
+          });
+        }
+
+        setDetails(groupData.data);
+        setSpendings(userTotalMap);
         
       } catch (err) {
         console.error("모달 데이터 로딩 실패:", err);
@@ -217,12 +242,16 @@ function TripDetailModal({ tripId }) {
       }
     }
 
-    fetchTripDetails();
+    fetchData();
   }, [tripId]); 
 
   if (loading) return <DetailWrapper><p style={{textAlign:'center'}}>로딩 중...</p></DetailWrapper>;
   if (error) return <DetailWrapper><InfoMessage>{error}</InfoMessage></DetailWrapper>;
   if (!details) return <DetailWrapper><p style={{textAlign:'center'}}>데이터가 없습니다.</p></DetailWrapper>;
+
+  // Owner의 지출액 조회 (owner 객체에 userId가 있다고 가정)
+  const ownerId = details.owner?.userId || details.owner?.email; 
+  const ownerSpend = spendings[ownerId] || 0;
 
   return (
     <DetailWrapper>
@@ -236,29 +265,31 @@ function TripDetailModal({ tripId }) {
           <InfoBox flex="1">{details.owner?.name}</InfoBox>
           <InfoBox flex="2">{details.owner?.email}</InfoBox>
           <AmountBox flex="1">
-             {details.owner?.totalSpend?.toLocaleString('ko-KR')}원
+             {ownerSpend.toLocaleString('ko-KR')}원
           </AmountBox>
         </ListItem>
 
         {/* 멤버 (Members) Rows */}
-        {details.members && details.members.map(member => (
-          <ListItem key={member.id}>
-            <InfoBox flex="1">{member.name}</InfoBox>
-            <InfoBox flex="2">{member.userId}</InfoBox> {/* member는 userId를 보여줌 */}
-            
-            {/* 사진처럼 '지출 내역' 버튼 모양을 원하면 아래 주석을 풀고 AmountBox 대신 사용하세요 */}
-            {/* <AmountBox flex="1" style={{cursor: 'pointer'}}>지출 내역</AmountBox> */}
-            
-            <AmountBox flex="1">
-              {member.totalSpend?.toLocaleString('ko-KR')}원
-            </AmountBox>
-          </ListItem>
-        ))}
+        {details.members && details.members.map(member => {
+          // 계산된 맵에서 해당 멤버의 userId로 금액 조회
+          const memberSpend = spendings[member.userId] || 0;
+
+          return (
+            <ListItem key={member.id}>
+              <InfoBox flex="1">{member.name}</InfoBox>
+              <InfoBox flex="2">{member.email}</InfoBox> 
+              <AmountBox flex="1">
+                {memberSpend.toLocaleString('ko-KR')}원
+              </AmountBox>
+            </ListItem>
+          );
+        })}
       </ListContainer>
     </DetailWrapper>
   );
 }
 
+// --- 5. 모달 래퍼 컴포넌트 ---
 function Modal({ isOpen, onClose, children, onMouseEnter, onMouseLeave }) {
   if (!isOpen) return null;
   return (
@@ -277,7 +308,7 @@ function Modal({ isOpen, onClose, children, onMouseEnter, onMouseLeave }) {
   );
 }
 
-// --- 6. Groups 메인 컴포넌트 (기존 유지) ---
+// --- 6. Groups 메인 컴포넌트 ---
 function Groups() {
   const [allTravelList, setAllTravelList] = useState([]);
   const [loading, setLoading] = useState(true);
