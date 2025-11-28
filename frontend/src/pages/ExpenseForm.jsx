@@ -44,8 +44,8 @@ export default function ExpenseForm() {
 
       const groupData = await groupRes.json();
       const memberList = groupData?.data?.members ?? [];
-      const name = groupData?.data?.group?.name;
-
+      const name = groupData?.data?.name;
+      
       setMembers(memberList);
       if (name) setGroupName(name);
 
@@ -63,13 +63,16 @@ export default function ExpenseForm() {
         const myParticipant = it.participants?.find(
           (p) => Number(p.userId) === Number(user?.id)
         );
+        const myAmount = myParticipant
+          ? Math.floor(it.amount * myParticipant.percent / 100)
+          : 0;
 
         return {
           id: it.expenseId ?? it.id,
           date: (it.spentAt ?? "").slice(0, 10).replace(/-/g, "."),
           name: it.name,
           totalAmount: it.amount,
-          myAmount: Number(myParticipant?.myAmount ?? 0),
+          myAmount,
           location: it.location,
           memo: it.memo ?? "",
           payment: it.payment?.toLowerCase?.() ?? "card",
