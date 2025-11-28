@@ -7,9 +7,6 @@ import { Link } from 'react-router-dom';
 import { API_BASE_URL } from "../config.js";
 import defaultImage from "../assets/map-location.png";
 
-// --- [새로 추가됨] 로컬 기본 이미지 Import ---
-//const defaultImage = "/map-location.png";
-
 // --- CSS 리셋 ---
 const GlobalPageReset = createGlobalStyle`
   body {
@@ -22,72 +19,101 @@ const GlobalPageReset = createGlobalStyle`
   }
 `;
 
-// --- 1. 모달 스타일 ---
+// --- 1. 모달 스타일 (컨테이너) ---
 const Backdrop = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.2); // 배경을 조금 더 연하게 수정
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000; 
 `;
+
 const ModalContainer = styled.div`
   width: 90%;
-  max-width: 600px; 
-  background-color: white;
-  padding: 1.5rem 2rem 2rem 2rem; 
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 650px; // 너비를 조금 더 넓힘
+  background-color: #f8f9fa; // 모달 배경을 아주 연한 회색으로 (박스가 흰색이라 대비됨)
+  padding: 2.5rem 2rem; 
+  border-radius: 16px; // 둥근 모서리 강화
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); // 그림자 부드럽게
   position: relative;
 `;
+
 const CloseButtonWrapper = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
 `;
 
-// --- 2. 모달 내용 스타일 ---
+// --- [변경됨] 2. 모달 내용 스타일 (이미지 디자인 적용) ---
 const DetailWrapper = styled.div`
   padding: 0;
   margin-top: 0; 
 `;
+
 const Title = styled.h2`
   margin-top: 0;
   margin-bottom: 2rem;
   text-align: center;
-  font-size: 1.8rem; 
-  font-weight: 600;  
-  color: inherit; 
-`;
-const MemberTable = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-const Row = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 2fr 1.5fr; 
-  gap: 1rem;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  &:first-child {
-    background-color: #f4f6f8;
-    font-weight: normal;
-  }
-`;
-const Cell = styled.div`
-  font-size: 0.95rem;
-  &:last-child {
-    text-align: right;
-  }
+  font-size: 1.5rem; 
+  font-weight: 700;  
+  color: #333; 
 `;
 
-// --- 3. Groups 페이지 스타일 ---
+// 테이블 대신 리스트 컨테이너 사용
+const ListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px; // 행(Row) 사이의 간격
+  max-height: 400px;
+  overflow-y: auto; // 내용이 길어지면 스크롤
+  padding: 4px; // 스크롤바와 내용 겹침 방지
+`;
+
+// 각 멤버 한 줄 (Row)
+const ListItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px; // 박스 사이의 간격
+`;
+
+// 데이터가 들어가는 흰색 둥근 박스 (Cell 대체)
+const InfoBox = styled.div`
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px; // 둥근 모서리
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center; // 텍스트 가운데 정렬
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); // 미세한 입체감
+  
+  // 내용이 넘칠 경우 처리
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  // flex-grow를 사용하여 비율 조정 (이미지 비율 참고)
+  // 이름(작게) : 이메일(넓게) : 금액(중간)
+  flex: ${({ flex }) => flex || 1}; 
+`;
+
+// 금액 부분은 버튼처럼 보일 수도 있으므로 스타일 추가 (선택 사항)
+const AmountBox = styled(InfoBox)`
+  font-weight: 700;
+  color: #333;
+  cursor: default;
+`;
+
+// --- 3. Groups 페이지 스타일 (기존 유지) ---
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -127,19 +153,14 @@ const Card = styled.div`
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   }
 `;
-
-// [수정됨] 이미지 태그 스타일
 const CardImage = styled.img`
   width: 100%;
   height: 180px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 16px;
-  background-color: #f0f0e0; /* 이미지가 로딩되기 전 잠깐 보이는 배경색 */
+  background-color: #f0f0e0;
 `;
-
-// [삭제됨] 더 이상 ImagePlaceholder 컴포넌트는 사용하지 않습니다.
-
 const MoreButtonContainer = styled.div`
   text-align: center;
   margin-top: 40px;
@@ -153,7 +174,7 @@ const InfoMessage = styled.p`
 
 const ITEMS_PER_LOAD = 3;
 
-// --- 5. 모달 컴포넌트 ---
+// --- [변경됨] 5. 모달 컴포넌트 ---
 function TripDetailModal({ tripId }) { 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -199,9 +220,9 @@ function TripDetailModal({ tripId }) {
     fetchTripDetails();
   }, [tripId]); 
 
-  if (loading) return <DetailWrapper><p>상세 정보를 불러오는 중...</p></DetailWrapper>;
+  if (loading) return <DetailWrapper><p style={{textAlign:'center'}}>로딩 중...</p></DetailWrapper>;
   if (error) return <DetailWrapper><InfoMessage>{error}</InfoMessage></DetailWrapper>;
-  if (!details) return <DetailWrapper><p>데이터가 없습니다.</p></DetailWrapper>;
+  if (!details) return <DetailWrapper><p style={{textAlign:'center'}}>데이터가 없습니다.</p></DetailWrapper>;
 
   return (
     <DetailWrapper>
@@ -209,20 +230,31 @@ function TripDetailModal({ tripId }) {
         {details.group?.name}
       </Title>
       
-      <MemberTable>
-        <Row>
-          <Cell>{details.owner?.name}</Cell>
-          <Cell>{details.owner?.email}</Cell>
-          <Cell>{details.owner?.totalSpend?.toLocaleString('ko-KR')}원</Cell>
-        </Row>
+      <ListContainer>
+        {/* 모임장 (Owner) Row */}
+        <ListItem>
+          <InfoBox flex="1">{details.owner?.name}</InfoBox>
+          <InfoBox flex="2">{details.owner?.email}</InfoBox>
+          <AmountBox flex="1">
+             {details.owner?.totalSpend?.toLocaleString('ko-KR')}원
+          </AmountBox>
+        </ListItem>
+
+        {/* 멤버 (Members) Rows */}
         {details.members && details.members.map(member => (
-          <Row key={member.id}>
-            <Cell>{member.name}</Cell>
-            <Cell>{member.userId}</Cell>
-            <Cell>{member.totalSpend?.toLocaleString('ko-KR')}원</Cell>
-          </Row>
+          <ListItem key={member.id}>
+            <InfoBox flex="1">{member.name}</InfoBox>
+            <InfoBox flex="2">{member.userId}</InfoBox> {/* member는 userId를 보여줌 */}
+            
+            {/* 사진처럼 '지출 내역' 버튼 모양을 원하면 아래 주석을 풀고 AmountBox 대신 사용하세요 */}
+            {/* <AmountBox flex="1" style={{cursor: 'pointer'}}>지출 내역</AmountBox> */}
+            
+            <AmountBox flex="1">
+              {member.totalSpend?.toLocaleString('ko-KR')}원
+            </AmountBox>
+          </ListItem>
         ))}
-      </MemberTable>
+      </ListContainer>
     </DetailWrapper>
   );
 }
@@ -245,7 +277,7 @@ function Modal({ isOpen, onClose, children, onMouseEnter, onMouseLeave }) {
   );
 }
 
-// --- 6. Groups 메인 컴포넌트 ---
+// --- 6. Groups 메인 컴포넌트 (기존 유지) ---
 function Groups() {
   const [allTravelList, setAllTravelList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -295,9 +327,9 @@ function Groups() {
 
   const handleMoreClick = () => {
     if (visibleCount >= allTravelList.length) {
-      setVisibleCount(ITEMS_PER_LOAD); // 접기
+      setVisibleCount(ITEMS_PER_LOAD); 
     } else {
-      setVisibleCount(prev => prev + ITEMS_PER_LOAD); // 더보기
+      setVisibleCount(prev => prev + ITEMS_PER_LOAD); 
     }
   };
 
@@ -342,7 +374,6 @@ function Groups() {
           ) : (
             allTravelList.slice(0, visibleCount).map(travel => {
               
-              // 이미지 처리 로직
               let imageSrc = null;
               if (travel.image && travel.image !== "null" && travel.image !== "") {
                 if (travel.image.startsWith('http') || travel.image.startsWith('data:')) {
@@ -351,9 +382,8 @@ function Groups() {
                   imageSrc = `data:image/jpeg;base64,${travel.image}`;
               }
             } else {
-              imageSrc = defaultImage; // 이미지 없으면 기본 이미지
+              imageSrc = defaultImage; 
             }
-
 
               return (
                 <Link 
@@ -365,10 +395,7 @@ function Groups() {
                     onMouseEnter={() => handleCardEnter(travel.id)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    {/* [수정됨] 이미지가 있으면 그 이미지를, 없으면 import한 기본 이미지를 보여줍니다. */}
-                    {/* OR 연산자 (||)를 사용하여 imageSrc가 없을 때 기본 이미지를 사용합니다. */}
                     <CardImage src={imageSrc} alt={travel.name} />
-                    
                     <h3>{travel.name}</h3>
                     <p>{travel.description}</p>
                   </Card>
