@@ -23,7 +23,8 @@ export default function ExpenseForm() {
   const [infoMessage, setInfoMessage] = useState("");
 
   const accessToken = localStorage.getItem("accessToken");
-  const user = accessToken ? jwtDecode(accessToken) : null;
+  //const user = accessToken ? jwtDecode(accessToken) : null;
+  const userId = localStorage.getItem("userId");
 
   /** 그룹 정보 + 지출 불러오기 */
   const fetchGroupData = async () => {
@@ -61,11 +62,10 @@ export default function ExpenseForm() {
 
       const normalized = list.map((it) => {
         const myParticipant = it.participants?.find(
-          (p) => Number(p.userId) === Number(user?.id)
+          (p) => Number(p.userId) === Number(userId)
         );
-        const myAmount = myParticipant
-          ? Math.floor(it.amount * myParticipant.percent / 100)
-          : 0;
+
+        const myAmount = Number(myParticipant?.myAmount ?? 0);
 
         return {
           id: it.expenseId ?? it.id,
