@@ -167,7 +167,7 @@ const InfoMessage = styled.p`
 
 const ITEMS_PER_LOAD = 3;
 
-// --- 4. 모달 내부 컨텐츠 컴포넌트 ---
+// --- 4. 모달 내부 컨텐츠 컴포넌트 (제목 표시 수정됨) ---
 function TripDetailModal({ tripId, onClose }) { 
   const [details, setDetails] = useState(null);
   const [spendings, setSpendings] = useState({}); // userId별 합산 금액 저장
@@ -221,6 +221,7 @@ function TripDetailModal({ tripId, onClose }) {
           expenseData.data.forEach(expense => {
             if (expense.participants && Array.isArray(expense.participants)) {
               expense.participants.forEach(p => {
+                // p.userId가 존재하면 해당 유저의 금액 누적
                 if (p.userId) {
                   const currentTotal = userTotalMap[p.userId] || 0;
                   userTotalMap[p.userId] = currentTotal + (p.myAmount || 0);
@@ -255,7 +256,7 @@ function TripDetailModal({ tripId, onClose }) {
       </Title>
       
       <ListContainer>
-        {/* [변경됨] 첫 줄을 데이터가 아닌 '헤더(제목)'로 사용 */}
+        {/* [수정됨] 첫 번째 줄을 '모임장 데이터' 대신 '컬럼 제목(Header)'으로 변경 */}
         <ListItem>
           <InfoBox flex="1" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이름</InfoBox>
           <InfoBox flex="2" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이메일</InfoBox>
@@ -264,10 +265,11 @@ function TripDetailModal({ tripId, onClose }) {
 
         {/* 멤버 (Members) Rows */}
         {details.members && details.members.map(member => {
+          // 계산된 맵에서 해당 멤버의 userId로 금액 조회
           const memberSpend = spendings[member.userId] || 0;
 
           return (
-            <ListItem key={member.userId || Math.random()}>
+            <ListItem key={member.id}>
               <InfoBox flex="1">{member.name}</InfoBox>
               <InfoBox flex="2">{member.email}</InfoBox> 
               <AmountBox flex="1">
