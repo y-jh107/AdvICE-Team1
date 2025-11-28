@@ -290,31 +290,29 @@ const ScrollBody = styled.div`
   max-height: 800px;
   overflow-y: auto;
 `;
-const TooltipWrapper = styled.div`
-  position: relative;
-  &:hover div:last-child {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-`;
 const Tooltip = styled.div`
   position: absolute;
-  top: 100%;
-  left: 10%;
-  background: rgba(0, 0, 0, 0.75);
+  top: 30%;
+  left: 30%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(0, 0, 0, 0.92);
   color: white;
-  padding: 6px 10px;
+  padding: 10px 14px;
   border-radius: 8px;
-  font-size: 12px;
-  margin-top: 4px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-5px);
-  transition: 0.2s;
-  max-width: 80%;
-  white-space: normal;
-  z-index: 50;
+  transition: 0.25s ease;
+  white-space: nowrap;
+  z-index: 999;
+`;
+
+const TooltipWrapper = styled.div`
+  position: relative;
+
+  &:hover ${Tooltip} {
+    opacity: 1;
+    visibility: visible;
+  }
 `;
 const DataRow = styled.div`
   display: grid;
