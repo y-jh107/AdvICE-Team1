@@ -23,7 +23,8 @@ export default function ExpenseForm() {
   const [infoMessage, setInfoMessage] = useState("");
 
   const accessToken = localStorage.getItem("accessToken");
-  const user = accessToken ? jwtDecode(accessToken) : null;
+  //const user = accessToken ? jwtDecode(accessToken) : null;
+  const userId = localStorage.getItem("userId");
 
   /** 그룹 정보 + 지출 불러오기 */
   const fetchGroupData = async () => {
@@ -61,11 +62,10 @@ export default function ExpenseForm() {
 
       const normalized = list.map((it) => {
         const myParticipant = it.participants?.find(
-          (p) => Number(p.userId) === Number(user?.id)
+          (p) => Number(p.userId) === Number(userId)
         );
-        const myAmount = myParticipant
-          ? Math.floor(it.amount * myParticipant.percent / 100)
-          : 0;
+
+        const myAmount = Number(myParticipant?.myAmount ?? 0);
 
         return {
           id: it.expenseId ?? it.id,
@@ -290,31 +290,29 @@ const ScrollBody = styled.div`
   max-height: 800px;
   overflow-y: auto;
 `;
-const TooltipWrapper = styled.div`
-  position: relative;
-  &:hover div:last-child {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-`;
 const Tooltip = styled.div`
   position: absolute;
-  top: 100%;
-  left: 10%;
-  background: rgba(0, 0, 0, 0.75);
+  top: 30%;
+  left: 30%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(0, 0, 0, 0.92);
   color: white;
-  padding: 6px 10px;
+  padding: 10px 14px;
   border-radius: 8px;
-  font-size: 12px;
-  margin-top: 4px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-5px);
-  transition: 0.2s;
-  max-width: 80%;
-  white-space: normal;
-  z-index: 50;
+  transition: 0.25s ease;
+  white-space: nowrap;
+  z-index: 999;
+`;
+
+const TooltipWrapper = styled.div`
+  position: relative;
+
+  &:hover ${Tooltip} {
+    opacity: 1;
+    visibility: visible;
+  }
 `;
 const DataRow = styled.div`
   display: grid;
