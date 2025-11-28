@@ -167,7 +167,7 @@ const InfoMessage = styled.p`
 
 const ITEMS_PER_LOAD = 3;
 
-// --- 4. 모달 내부 컨텐츠 컴포넌트 (로직 수정됨) ---
+// --- 4. 모달 내부 컨텐츠 컴포넌트 (제목 표시 수정됨) ---
 function TripDetailModal({ tripId, onClose }) { 
   const [details, setDetails] = useState(null);
   const [spendings, setSpendings] = useState({}); // userId별 합산 금액 저장
@@ -249,10 +249,6 @@ function TripDetailModal({ tripId, onClose }) {
   if (error) return <DetailWrapper><InfoMessage>{error}</InfoMessage></DetailWrapper>;
   if (!details) return <DetailWrapper><p style={{textAlign:'center'}}>데이터가 없습니다.</p></DetailWrapper>;
 
-  // Owner의 지출액 조회 (owner 객체에 userId가 있다고 가정)
-  const ownerId = details.owner?.userId || details.owner?.email; 
-  const ownerSpend = spendings[ownerId] || 0;
-
   return (
     <DetailWrapper>
       <Title>
@@ -260,13 +256,11 @@ function TripDetailModal({ tripId, onClose }) {
       </Title>
       
       <ListContainer>
-        {/* 모임장 (Owner) Row */}
+        {/* [수정됨] 첫 번째 줄을 '모임장 데이터' 대신 '컬럼 제목(Header)'으로 변경 */}
         <ListItem>
-          <InfoBox flex="1">{details.owner?.name}</InfoBox>
-          <InfoBox flex="2">{details.owner?.email}</InfoBox>
-          <AmountBox flex="1">
-             {ownerSpend.toLocaleString('ko-KR')}원
-          </AmountBox>
+          <InfoBox flex="1" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이름</InfoBox>
+          <InfoBox flex="2" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이메일</InfoBox>
+          <InfoBox flex="1" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>지출 금액</InfoBox>
         </ListItem>
 
         {/* 멤버 (Members) Rows */}
