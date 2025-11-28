@@ -167,7 +167,7 @@ const InfoMessage = styled.p`
 
 const ITEMS_PER_LOAD = 3;
 
-// --- 4. 모달 내부 컨텐츠 컴포넌트 (로직 수정됨) ---
+// --- 4. 모달 내부 컨텐츠 컴포넌트 ---
 function TripDetailModal({ tripId, onClose }) { 
   const [details, setDetails] = useState(null);
   const [spendings, setSpendings] = useState({}); // userId별 합산 금액 저장
@@ -221,7 +221,6 @@ function TripDetailModal({ tripId, onClose }) {
           expenseData.data.forEach(expense => {
             if (expense.participants && Array.isArray(expense.participants)) {
               expense.participants.forEach(p => {
-                // p.userId가 존재하면 해당 유저의 금액 누적
                 if (p.userId) {
                   const currentTotal = userTotalMap[p.userId] || 0;
                   userTotalMap[p.userId] = currentTotal + (p.myAmount || 0);
@@ -249,10 +248,6 @@ function TripDetailModal({ tripId, onClose }) {
   if (error) return <DetailWrapper><InfoMessage>{error}</InfoMessage></DetailWrapper>;
   if (!details) return <DetailWrapper><p style={{textAlign:'center'}}>데이터가 없습니다.</p></DetailWrapper>;
 
-  // Owner의 지출액 조회 (owner 객체에 userId가 있다고 가정)
-  const ownerId = details.owner?.userId || details.owner?.email; 
-  const ownerSpend = spendings[ownerId] || 0;
-
   return (
     <DetailWrapper>
       <Title>
@@ -260,22 +255,19 @@ function TripDetailModal({ tripId, onClose }) {
       </Title>
       
       <ListContainer>
-        {/* 모임장 (Owner) Row */}
+        {/* [변경됨] 첫 줄을 데이터가 아닌 '헤더(제목)'로 사용 */}
         <ListItem>
-          <InfoBox flex="1">{details.owner?.name}</InfoBox>
-          <InfoBox flex="2">{details.owner?.email}</InfoBox>
-          <AmountBox flex="1">
-             {ownerSpend.toLocaleString('ko-KR')}원
-          </AmountBox>
+          <InfoBox flex="1" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이름</InfoBox>
+          <InfoBox flex="2" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>이메일</InfoBox>
+          <InfoBox flex="1" style={{backgroundColor: '#f1f3f5', fontWeight: '800', color: '#555'}}>지출 금액</InfoBox>
         </ListItem>
 
         {/* 멤버 (Members) Rows */}
         {details.members && details.members.map(member => {
-          // 계산된 맵에서 해당 멤버의 userId로 금액 조회
           const memberSpend = spendings[member.userId] || 0;
 
           return (
-            <ListItem key={member.id}>
+            <ListItem key={member.userId || Math.random()}>
               <InfoBox flex="1">{member.name}</InfoBox>
               <InfoBox flex="2">{member.email}</InfoBox> 
               <AmountBox flex="1">
