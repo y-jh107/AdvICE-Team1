@@ -24,8 +24,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/**", "/static/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/api/login", "/api/signup").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/login", "/signup").permitAll()
                         .requestMatchers("/api/fx").permitAll()
+                        .requestMatchers("/vite.sng").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService),
                         UsernamePasswordAuthenticationFilter.class);

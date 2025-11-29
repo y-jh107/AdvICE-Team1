@@ -141,7 +141,12 @@ export default function Login() {
           />
           <Button text="로그인" type="submit" />
           <SignupText>
-            계정이 없으신가요? <a href="/signup">회원가입</a>
+            계정이 없으신가요? <a href="/signup" onClick={(e) => {
+              e.preventDefault();
+              navigate("/signup");
+          }}>
+              회원가입
+          </a>
           </SignupText>
         </FormWrapper>
       </FormSection>
