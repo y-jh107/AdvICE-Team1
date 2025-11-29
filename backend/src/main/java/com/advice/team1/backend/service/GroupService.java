@@ -40,6 +40,12 @@ public class GroupService {
                 mapper.readValue(req.members(), GroupMemberRequestDto[].class)
         );
 
+        byte[] image = null;
+
+        if (req.groupImage() != null && !req.groupImage().isEmpty()) {
+            image = req.groupImage().getBytes();
+        }
+
         LocalDate start = req.startDate();
         LocalDate end = req.endDate();
 
@@ -48,7 +54,7 @@ public class GroupService {
                 .description(req.description())
                 .startDate(start)
                 .endDate(end)
-                .groupImage(req.groupImage().getBytes())
+                .groupImage(image)
                 .build();
 
         Group saved = groups.save(g);
